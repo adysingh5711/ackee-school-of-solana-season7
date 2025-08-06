@@ -40,6 +40,7 @@ pub fn _init_vault(ctx: Context<InitializeVault>, locked: bool) -> Result<()> {
 
   vault.vault_authority = ctx.accounts.vault_authority.key();
   vault.locked = locked;
+  vault.balance = 0;
 
   emit!(InitializeVaultEvent {
     vault: vault.key(),

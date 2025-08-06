@@ -8,4 +8,10 @@ pub enum VaultError {
     Overflow,
     #[msg("Insufficient balance")]
     InsufficientBalance,
+    #[msg("Invalid amount")]
+    InvalidAmount,
+    #[msg("Invalid authority")]
+    InvalidAuthority,
+    #[msg("Vault is not active")]
+    VaultNotActive,
 }
