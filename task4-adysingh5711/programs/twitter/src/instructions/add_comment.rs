@@ -22,13 +22,27 @@ pub fn add_comment(ctx: Context<AddCommentContext>, comment_content: String) -> 
         return Err(TwitterError::CommentTooLong.into());
     }
 
+    // Verify the PDA was derived correctly with the comment content
+    let content_hash = hash(comment_content.as_bytes());
+    let expected_seeds = &[
+        COMMENT_SEED.as_bytes(),
+        ctx.accounts.comment_author.key().as_ref(),
+        content_hash.to_bytes().as_ref(),
+        ctx.accounts.tweet.key().as_ref()
+    ];
+    let (expected_pda, expected_bump) = Pubkey::find_program_address(expected_seeds, ctx.program_id);
+    
+    if expected_pda != ctx.accounts.comment.key() {
+        return Err(ProgramError::InvalidSeeds.into());
+    }
+
     let comment = &mut ctx.accounts.comment;
     let tweet = &ctx.accounts.tweet;
 
     comment.comment_author = ctx.accounts.comment_author.key();
     comment.parent_tweet = tweet.key();
     comment.content = comment_content;
-    comment.bump = ctx.bumps.comment;
+    comment.bump = expected_bump;
     
     Ok(())
 }
@@ -43,16 +57,10 @@ pub struct AddCommentContext<'info> {
     #[account(
         init,
         payer = comment_author,
-        space = 8 + Comment::INIT_SPACE,
-        seeds = [
-            COMMENT_SEED.as_bytes(),
-            comment_author.key().as_ref(),
-            hash(comment_content.as_bytes()).to_bytes().as_ref(),
-            tweet.key().as_ref()
-        ],
-        bump
+        space = 8 + Comment::INIT_SPACE
     )]
     pub comment: Account<'info, Comment>,
+    
     pub tweet: Account<'info, Tweet>,
     pub system_program: Program<'info, System>,
 }
