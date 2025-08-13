@@ -21,17 +21,20 @@ pub fn add_comment(ctx: Context<AddCommentContext>, content: String) -> Result<(
     if content.len() > COMMENT_LENGTH {
         return Err(TwitterError::CommentTooLong.into());
     }
+
     let comment = &mut ctx.accounts.comment;
     let tweet = &ctx.accounts.tweet;
+
     comment.comment_author = ctx.accounts.comment_author.key();
     comment.parent_tweet = tweet.key();
     comment.content = content;
     comment.bump = ctx.bumps.comment;
+    
     Ok(())
 }
 
 #[derive(Accounts)]
-#[instruction(comment_content: String)]
+#[instruction(content: String)]
 pub struct AddCommentContext<'info> {
     #[account(mut)]
     pub comment_author: Signer<'info>,
@@ -43,7 +46,7 @@ pub struct AddCommentContext<'info> {
         seeds = [
             COMMENT_SEED.as_bytes(),
             comment_author.key().as_ref(),
-            &hash(comment_content.as_bytes()).to_bytes().as_ref(),
+            &hash(content.as_bytes()).to_bytes().as_ref(),
             tweet.key().as_ref()
         ],
         bump
