@@ -46,7 +46,7 @@ pub struct AddCommentContext<'info> {
             COMMENT_SEED.as_bytes(),
             comment_author.key().as_ref(),
             { hash(comment_content.as_bytes()).to_bytes().as_ref() },
-            parent_tweet.key().as_ref()
+            tweet.key().as_ref()
         ],
         bump
     )]
