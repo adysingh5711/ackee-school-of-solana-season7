@@ -12,6 +12,7 @@
 
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::hash::hash;
+
 use crate::errors::TwitterError;
 use crate::states::*;
 
@@ -44,8 +45,8 @@ pub struct AddCommentContext<'info> {
         seeds = [
             COMMENT_SEED.as_bytes(),
             comment_author.key().as_ref(),
-            &hash(comment_content.as_bytes()).to_bytes(),  // ✅ FIX: prefix with `&`
-            tweet.key().as_ref()
+            { hash(comment_content.as_bytes()).to_bytes().as_ref() },
+            parent_tweet.key().as_ref()
         ],
         bump
     )]
