@@ -5,7 +5,7 @@ pub mod state;
 pub mod instructions;
 pub mod errors;
 
-// Re-export for easy access
+// Re-export everything from modules
 pub use state::*;
 pub use instructions::*;
 pub use errors::*;
@@ -24,7 +24,7 @@ pub mod spotify_dapp {
         bio: String,
         profile_image: String,
     ) -> Result<()> {
-        instructions::user::create_user_profile(ctx, username, display_name, bio, profile_image)
+        create_user_profile(ctx, username, display_name, bio, profile_image)
     }
 
     pub fn update_user_profile(
@@ -33,7 +33,7 @@ pub mod spotify_dapp {
         bio: Option<String>,
         profile_image: Option<String>,
     ) -> Result<()> {
-        instructions::user::update_user_profile(ctx, display_name, bio, profile_image)
+        update_user_profile(ctx, display_name, bio, profile_image)
     }
 
     // Track Management Instructions
@@ -47,14 +47,14 @@ pub mod spotify_dapp {
         audio_url: String,
         cover_image: String,
     ) -> Result<()> {
-        instructions::track::create_track(ctx, title, artist, album, genre, duration, audio_url, cover_image)
+        create_track(ctx, title, artist, album, genre, duration, audio_url, cover_image)
     }
 
     pub fn play_track(
         ctx: Context<PlayTrack>,
         duration_played: u64,
     ) -> Result<()> {
-        instructions::track::play_track(ctx, duration_played)
+        play_track(ctx, duration_played)
     }
 
     // Playlist Management Instructions
@@ -65,33 +65,33 @@ pub mod spotify_dapp {
         is_public: bool,
         is_collaborative: bool,
     ) -> Result<()> {
-        instructions::playlist::create_playlist(ctx, name, description, is_public, is_collaborative)
+        create_playlist(ctx, name, description, is_public, is_collaborative)
     }
 
     pub fn add_track_to_playlist(
         ctx: Context<AddTrackToPlaylist>,
     ) -> Result<()> {
-        instructions::playlist::add_track_to_playlist(ctx)
+        add_track_to_playlist(ctx)
     }
 
     pub fn add_collaborator(
         ctx: Context<AddCollaborator>,
         permissions: u8,
     ) -> Result<()> {
-        instructions::playlist::add_collaborator(ctx, permissions)
+        add_collaborator(ctx, permissions)
     }
 
     // Social Instructions
     pub fn like_track(
         ctx: Context<LikeTrack>,
     ) -> Result<()> {
-        instructions::social::like_track(ctx)
+        like_track(ctx)
     }
 
     pub fn follow_user(
         ctx: Context<FollowUser>,
     ) -> Result<()> {
-        instructions::social::follow_user(ctx)
+        follow_user(ctx)
     }
 
     // Search and Discovery Instructions
@@ -101,14 +101,14 @@ pub mod spotify_dapp {
         target_type: u8,
         target_pubkey: Pubkey,
     ) -> Result<()> {
-        instructions::search::create_search_index(ctx, search_term, target_type, target_pubkey)
+        create_search_index(ctx, search_term, target_type, target_pubkey)
     }
 
     // Analytics Instructions
     pub fn generate_user_insights(
         ctx: Context<GenerateUserInsights>,
     ) -> Result<()> {
-        instructions::analytics::generate_user_insights(ctx)
+        generate_user_insights(ctx)
     }
 
     pub fn create_recommendation(
@@ -118,6 +118,6 @@ pub mod spotify_dapp {
         score: f32,
         reason: String,
     ) -> Result<()> {
-        instructions::analytics::create_recommendation(ctx, recommendation_type, target, score, reason)
+        create_recommendation(ctx, recommendation_type, target, score, reason)
     }
 }

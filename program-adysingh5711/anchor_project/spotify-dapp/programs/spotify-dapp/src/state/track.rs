@@ -23,10 +23,12 @@ impl Track {
 pub struct TrackPlay {
     pub track: Pubkey,            // Track that was played (32 bytes)
     pub user: Pubkey,             // User who played the track (32 bytes)
-    pub played_at: i64,           // When played (8 bytes)
-    pub duration_played: u64,     // How long it was played (8 bytes)
+    pub play_count: u64,          // Number of times played (8 bytes)
+    pub total_duration: u64,      // Total duration played (8 bytes)
+    pub first_played_at: i64,     // When first played (8 bytes)
+    pub last_played_at: i64,      // When last played (8 bytes)
 }
 
 impl TrackPlay {
-    pub const MAX_SIZE: usize = 8 + 32 + 32 + 8 + 8; // 88 bytes
+    pub const MAX_SIZE: usize = 8 + 32 + 32 + 8 + 8 + 8 + 8; // 104 bytes
 }

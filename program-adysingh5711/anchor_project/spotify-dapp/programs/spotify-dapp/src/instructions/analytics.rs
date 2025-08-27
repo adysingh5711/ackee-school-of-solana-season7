@@ -8,8 +8,18 @@ pub fn generate_user_insights(
     ctx: Context<GenerateUserInsights>,
 ) -> Result<()> {
     let user_insights = &mut ctx.accounts.user_insights;
-    let user_stats = &ctx.accounts.user_stats;
+    let user_stats = &mut ctx.accounts.user_stats;
     let clock = Clock::get()?;
+
+    // Initialize user_stats if this is the first time
+    if user_stats.user == Pubkey::default() {
+        user_stats.user = ctx.accounts.user.key();
+        user_stats.tracks_created = 0;
+        user_stats.playlists_created = 0;
+        user_stats.total_likes_received = 0;
+        user_stats.total_plays = 0;
+        user_stats.last_active = clock.unix_timestamp;
+    }
 
     // Calculate insights based on user activity
     user_insights.user = ctx.accounts.user.key();
@@ -115,13 +125,16 @@ pub struct GenerateUserInsights<'info> {
     #[account(
         init_if_needed,
         payer = user,
-        space = UserInsights::MAX_SIZE,
+        space = 8 + UserInsights::MAX_SIZE,
         seeds = [b"user_insights", user.key().as_ref()],
         bump
     )]
     pub user_insights: Account<'info, UserInsights>,
 
     #[account(
+        init_if_needed,
+        payer = user,
+        space = 8 + UserStats::MAX_SIZE,
         seeds = [b"user_stats", user.key().as_ref()],
         bump
     )]
@@ -139,7 +152,7 @@ pub struct CreateRecommendation<'info> {
     #[account(
         init,
         payer = user,
-        space = Recommendation::MAX_SIZE,
+        space = 8 + Recommendation::MAX_SIZE,
         seeds = [b"recommendation", user.key().as_ref(), target.as_ref(), &recommendation_type.to_le_bytes()],
         bump
     )]

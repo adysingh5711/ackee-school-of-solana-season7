@@ -27,12 +27,21 @@ pub fn like_track(
     // Update user activity
     user_stats.last_active = clock.unix_timestamp;
 
-    // Create activity feed entry
-    activity_feed.user = ctx.accounts.user.key();
-    activity_feed.activity_type = ActivityFeed::ACTIVITY_TRACK_LIKED;
-    activity_feed.target = track.key();
-    activity_feed.metadata = format!("Liked track: {}", track.title);
-    activity_feed.created_at = clock.unix_timestamp;
+    // Create or update activity feed entry
+    if activity_feed.user == Pubkey::default() {
+        // Initialize new activity feed
+        activity_feed.user = ctx.accounts.user.key();
+        activity_feed.activity_type = ActivityFeed::ACTIVITY_TRACK_LIKED;
+        activity_feed.target = track.key();
+        activity_feed.metadata = format!("Liked track: {}", track.title);
+        activity_feed.created_at = clock.unix_timestamp;
+    } else {
+        // Update existing activity feed with latest action
+        activity_feed.activity_type = ActivityFeed::ACTIVITY_TRACK_LIKED;
+        activity_feed.target = track.key();
+        activity_feed.metadata = format!("Liked track: {}", track.title);
+        activity_feed.created_at = clock.unix_timestamp;
+    }
 
     msg!("Track liked: {}", track.title);
     Ok(())
@@ -65,12 +74,21 @@ pub fn follow_user(
     follower_profile.following_count = follower_profile.following_count.checked_add(1)
         .ok_or(SpotifyError::ArithmeticOverflow)?;
 
-    // Create activity feed entry
-    activity_feed.user = ctx.accounts.follower.key();
-    activity_feed.activity_type = ActivityFeed::ACTIVITY_USER_FOLLOWED;
-    activity_feed.target = following_profile.key();
-    activity_feed.metadata = format!("Followed {}", following_profile.username);
-    activity_feed.created_at = clock.unix_timestamp;
+    // Create or update activity feed entry
+    if activity_feed.user == Pubkey::default() {
+        // Initialize new activity feed
+        activity_feed.user = ctx.accounts.follower.key();
+        activity_feed.activity_type = ActivityFeed::ACTIVITY_USER_FOLLOWED;
+        activity_feed.target = following_profile.key();
+        activity_feed.metadata = format!("Followed {}", following_profile.username);
+        activity_feed.created_at = clock.unix_timestamp;
+    } else {
+        // Update existing activity feed with latest action
+        activity_feed.activity_type = ActivityFeed::ACTIVITY_USER_FOLLOWED;
+        activity_feed.target = following_profile.key();
+        activity_feed.metadata = format!("Followed {}", following_profile.username);
+        activity_feed.created_at = clock.unix_timestamp;
+    }
 
     msg!("User {} followed {}", follower_profile.username, following_profile.username);
     Ok(())
@@ -105,10 +123,10 @@ pub struct LikeTrack<'info> {
     pub creator_stats: Account<'info, UserStats>,
 
     #[account(
-        init,
+        init_if_needed,
         payer = user,
-        space = ActivityFeed::MAX_SIZE,
-        seeds = [b"activity_feed", user.key().as_ref(), &Clock::get()?.unix_timestamp.to_le_bytes()],
+        space = 8 + ActivityFeed::MAX_SIZE,
+        seeds = [b"activity_feed", user.key().as_ref()],
         bump
     )]
     pub activity_feed: Account<'info, ActivityFeed>,
@@ -145,10 +163,10 @@ pub struct FollowUser<'info> {
     pub user_follow: Account<'info, UserFollow>,
 
     #[account(
-        init,
+        init_if_needed,
         payer = follower,
-        space = ActivityFeed::MAX_SIZE,
-        seeds = [b"activity_feed", follower.key().as_ref(), &Clock::get()?.unix_timestamp.to_le_bytes()],
+        space = 8 + ActivityFeed::MAX_SIZE,
+        seeds = [b"activity_feed", follower.key().as_ref()],
         bump
     )]
     pub activity_feed: Account<'info, ActivityFeed>,
