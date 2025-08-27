@@ -97,7 +97,7 @@ pub struct CreatePlaylist<'info> {
         seeds = [b"playlist", authority.key().as_ref(), name.as_bytes()],
         bump
     )]
-    pub playlist: Account<'info, Playlist>,
+    pub playlist: Box<Account<'info, Playlist>>,
 
     #[account(
         mut,
@@ -119,7 +119,7 @@ pub struct AddTrackToPlaylist<'info> {
         seeds = [b"playlist", playlist.authority.as_ref(), playlist.name.as_bytes()],
         bump
     )]
-    pub playlist: Account<'info, Playlist>,
+    pub playlist: Box<Account<'info, Playlist>>,
 
     #[account(
         init,
@@ -146,7 +146,7 @@ pub struct AddCollaborator<'info> {
         bump,
         has_one = authority
     )]
-    pub playlist: Account<'info, Playlist>,
+    pub playlist: Box<Account<'info, Playlist>>,
 
     #[account(
         init,
