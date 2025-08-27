@@ -83,7 +83,7 @@ pub struct CreateUserProfile<'info> {
         seeds = [b"user_profile", authority.key().as_ref()],
         bump
     )]
-    pub user_profile: Account<'info, UserProfile>,
+    pub user_profile: Box<Account<'info, UserProfile>>,
 
     #[account(
         init,
@@ -108,7 +108,7 @@ pub struct UpdateUserProfile<'info> {
         bump,
         has_one = authority
     )]
-    pub user_profile: Account<'info, UserProfile>,
+    pub user_profile: Box<Account<'info, UserProfile>>,
 
     #[account(
         mut,

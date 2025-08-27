@@ -99,7 +99,7 @@ pub struct CreateTrack<'info> {
         seeds = [b"track", title.as_bytes(), artist.as_bytes()],
         bump
     )]
-    pub track: Account<'info, Track>,
+    pub track: Box<Account<'info, Track>>,
 
     #[account(
         mut,
@@ -117,7 +117,7 @@ pub struct CreateTrack<'info> {
 #[derive(Accounts)]
 pub struct PlayTrack<'info> {
     #[account(mut)]
-    pub track: Account<'info, Track>,
+    pub track: Box<Account<'info, Track>>,
 
     #[account(
         init_if_needed,
