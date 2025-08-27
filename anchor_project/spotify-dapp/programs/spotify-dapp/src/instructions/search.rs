@@ -1,5 +1,4 @@
 use anchor_lang::prelude::*;
-use crate::state::*;
 use crate::errors::SpotifyError;
 
 // Search functionality will be implemented through view functions

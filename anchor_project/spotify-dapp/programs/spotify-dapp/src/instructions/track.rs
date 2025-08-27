@@ -56,11 +56,23 @@ pub fn play_track(
     let creator_stats = &mut ctx.accounts.creator_stats;
     let clock = Clock::get()?;
 
-    // Record the play
-    track_play.track = track.key();
-    track_play.user = ctx.accounts.user.key();
-    track_play.played_at = clock.unix_timestamp;
-    track_play.duration_played = duration_played;
+    // Initialize or update the play record
+    if track_play.track == Pubkey::default() {
+        // First time playing this track
+        track_play.track = track.key();
+        track_play.user = ctx.accounts.user.key();
+        track_play.play_count = 1;
+        track_play.total_duration = duration_played;
+        track_play.first_played_at = clock.unix_timestamp;
+        track_play.last_played_at = clock.unix_timestamp;
+    } else {
+        // Update existing play record
+        track_play.play_count = track_play.play_count.checked_add(1)
+            .ok_or(SpotifyError::ArithmeticOverflow)?;
+        track_play.total_duration = track_play.total_duration.checked_add(duration_played)
+            .ok_or(SpotifyError::ArithmeticOverflow)?;
+        track_play.last_played_at = clock.unix_timestamp;
+    }
 
     // Update track play count
     track.plays_count = track.plays_count.checked_add(1)
@@ -108,10 +120,10 @@ pub struct PlayTrack<'info> {
     pub track: Account<'info, Track>,
 
     #[account(
-        init,
+        init_if_needed,
         payer = user,
-        space = TrackPlay::MAX_SIZE,
-        seeds = [b"track_play", track.key().as_ref(), user.key().as_ref(), &Clock::get()?.unix_timestamp.to_le_bytes()],
+        space = 8 + TrackPlay::MAX_SIZE,
+        seeds = [b"track_play", track.key().as_ref(), user.key().as_ref()],
         bump
     )]
     pub track_play: Account<'info, TrackPlay>,
