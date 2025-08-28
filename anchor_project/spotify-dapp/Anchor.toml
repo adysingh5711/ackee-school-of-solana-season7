@@ -6,7 +6,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-spotify_dapp = "4f2BpoBwUu2tqvxDQmMnEB6q7VT3zV6rAnpTuruU2dSp"
+spotify_program = "4f2BpoBwUu2tqvxDQmMnEB6q7VT3zV6rAnpTuruU2dSp"
 
 [registry]
 url = "https://api.apr.dev"
