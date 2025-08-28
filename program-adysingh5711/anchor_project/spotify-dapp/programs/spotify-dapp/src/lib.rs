@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 use anchor_lang::prelude::*;
 
 // Import modules
@@ -22,18 +23,18 @@ pub mod spotify_program {
         bio: String,
         profile_image: String,
     ) -> Result<()> {
-        let user_profile = &mut ctx.accounts.user_profile;
-        let user_stats = &mut ctx.accounts.user_stats;
-        let clock = Clock::get()?;
-
-        // Validate inputs
-        require!(username.len() <= 32, SpotifyError::UsernameTooLong);
-        require!(username.len() > 0, SpotifyError::UsernameEmpty);
+        // Validate inputs first to avoid unnecessary work
+        require!(username.len() <= 32 && !username.is_empty(), SpotifyError::UsernameTooLong);
         require!(display_name.len() <= 64, SpotifyError::DisplayNameTooLong);
         require!(bio.len() <= 256, SpotifyError::BioTooLong);
         require!(profile_image.len() <= 256, SpotifyError::ProfileImageUrlTooLong);
 
-        user_profile.authority = ctx.accounts.authority.key();
+        let user_profile = &mut ctx.accounts.user_profile;
+        let user_stats = &mut ctx.accounts.user_stats;
+        let clock = Clock::get()?;
+        let authority_key = ctx.accounts.authority.key();
+
+        user_profile.authority = authority_key;
         user_profile.username = username;
         user_profile.display_name = display_name;
         user_profile.bio = bio;
@@ -64,18 +65,19 @@ pub mod spotify_program {
         audio_url: String,
         cover_image: String,
     ) -> Result<()> {
-        let track = &mut ctx.accounts.track;
-        let user_stats = &mut ctx.accounts.user_stats;
-        let clock = Clock::get()?;
-
-        require!(title.len() <= 128, SpotifyError::TrackTitleTooLong);
-        require!(title.len() > 0, SpotifyError::TrackTitleEmpty);
+        // Validate inputs first
+        require!(title.len() <= 128 && !title.is_empty(), SpotifyError::TrackTitleTooLong);
         require!(artist.len() <= 64, SpotifyError::ArtistNameTooLong);
         require!(album.len() <= 64, SpotifyError::AlbumNameTooLong);
         require!(genre.len() <= 32, SpotifyError::GenreTooLong);
         require!(audio_url.len() <= 256, SpotifyError::AudioUrlTooLong);
         require!(cover_image.len() <= 256, SpotifyError::CoverImageUrlTooLong);
         require!(duration > 0, SpotifyError::InvalidDuration);
+
+        let track = &mut ctx.accounts.track;
+        let user_stats = &mut ctx.accounts.user_stats;
+        let clock = Clock::get()?;
+        let authority_key = ctx.accounts.authority.key();
 
         track.title = title;
         track.artist = artist;
@@ -86,7 +88,7 @@ pub mod spotify_program {
         track.cover_image = cover_image;
         track.likes_count = 0;
         track.plays_count = 0;
-        track.created_by = ctx.accounts.authority.key();
+        track.created_by = authority_key;
         track.created_at = clock.unix_timestamp;
 
         // Update user stats
