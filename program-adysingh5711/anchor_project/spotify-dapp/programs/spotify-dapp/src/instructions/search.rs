@@ -1,8 +1,6 @@
 use anchor_lang::prelude::*;
+use crate::state::*; // This will now include SearchIndex
 use crate::errors::SpotifyError;
-
-// Search functionality will be implemented through view functions
-// These are helper functions for the frontend to query data
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct SearchFilters {
@@ -29,7 +27,24 @@ impl SearchResult {
     pub const RESULT_TYPE_USER: u8 = 3;
 }
 
-// Create search index for better performance
+#[derive(Accounts)]
+#[instruction(search_term: String, target_type: u8)]
+pub struct CreateSearchIndex<'info> {
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + SearchIndex::MAX_SIZE,
+        seeds = [b"search_index", search_term.to_lowercase().as_bytes(), &target_type.to_le_bytes()],
+        bump
+    )]
+    pub search_index: Account<'info, SearchIndex>,
+
+    #[account(mut)]
+    pub authority: Signer<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
 pub fn create_search_index(
     ctx: Context<CreateSearchIndex>,
     search_term: String,
@@ -49,34 +64,4 @@ pub fn create_search_index(
 
     msg!("Search index created for: {}", search_index.search_term);
     Ok(())
-}
-
-#[account]
-pub struct SearchIndex {
-    pub search_term: String,      // Searchable term (4 + 64 = 68 bytes)
-    pub target_type: u8,          // Type of target (1 byte)
-    pub target_pubkey: Pubkey,    // Target account (32 bytes)
-    pub created_at: i64,          // When indexed (8 bytes)
-}
-
-impl SearchIndex {
-    pub const MAX_SIZE: usize = 8 + 68 + 1 + 32 + 8; // 117 bytes
-}
-
-#[derive(Accounts)]
-#[instruction(search_term: String, target_type: u8)]
-pub struct CreateSearchIndex<'info> {
-    #[account(
-        init,
-        payer = authority,
-        space = SearchIndex::MAX_SIZE,
-        seeds = [b"search_index", search_term.to_lowercase().as_bytes(), &target_type.to_le_bytes()],
-        bump
-    )]
-    pub search_index: Account<'info, SearchIndex>,
-
-    #[account(mut)]
-    pub authority: Signer<'info>,
-
-    pub system_program: Program<'info, System>,
 }

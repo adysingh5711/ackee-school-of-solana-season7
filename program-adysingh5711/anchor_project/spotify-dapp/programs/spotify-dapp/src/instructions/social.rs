@@ -2,6 +2,89 @@ use anchor_lang::prelude::*;
 use crate::state::*;
 use crate::errors::SpotifyError;
 
+#[derive(Accounts)]
+pub struct LikeTrack<'info> {
+    #[account(mut)]
+    pub track: Account<'info, Track>,
+
+    #[account(
+        init,
+        payer = user,
+        space = 8 + TrackLike::MAX_SIZE, // Add discriminator space
+        seeds = [b"track_like", user.key().as_ref(), track.key().as_ref()],
+        bump
+    )]
+    pub track_like: Account<'info, TrackLike>,
+
+    #[account(
+        mut,
+        seeds = [b"user_stats", user.key().as_ref()],
+        bump
+    )]
+    pub user_stats: Account<'info, UserStats>,
+
+    #[account(
+        mut,
+        seeds = [b"user_stats", track.created_by.as_ref()],
+        bump
+    )]
+    pub creator_stats: Account<'info, UserStats>,
+
+    #[account(
+        init_if_needed,
+        payer = user,
+        space = 8 + ActivityFeed::MAX_SIZE,
+        seeds = [b"activity_feed", user.key().as_ref()],
+        bump
+    )]
+    pub activity_feed: Account<'info, ActivityFeed>,
+
+    #[account(mut)]
+    pub user: Signer<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct FollowUser<'info> {
+    #[account(
+        mut,
+        seeds = [b"user_profile", follower.key().as_ref()],
+        bump
+    )]
+    pub follower_profile: Account<'info, UserProfile>,
+
+    #[account(
+        mut,
+        seeds = [b"user_profile", following_profile.authority.as_ref()],
+        bump
+    )]
+    pub following_profile: Account<'info, UserProfile>,
+
+    #[account(
+        init,
+        payer = follower,
+        space = 8 + UserFollow::MAX_SIZE, // Add discriminator space
+        seeds = [b"user_follow", follower.key().as_ref(), following_profile.key().as_ref()],
+        bump
+    )]
+    pub user_follow: Account<'info, UserFollow>,
+
+    #[account(
+        init_if_needed,
+        payer = follower,
+        space = 8 + ActivityFeed::MAX_SIZE,
+        seeds = [b"activity_feed", follower.key().as_ref()],
+        bump
+    )]
+    pub activity_feed: Account<'info, ActivityFeed>,
+
+    #[account(mut)]
+    pub follower: Signer<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
 pub fn like_track(
     ctx: Context<LikeTrack>,
 ) -> Result<()> {
@@ -92,87 +175,4 @@ pub fn follow_user(
 
     msg!("User {} followed {}", follower_profile.username, following_profile.username);
     Ok(())
-}
-
-#[derive(Accounts)]
-pub struct LikeTrack<'info> {
-    #[account(mut)]
-    pub track: Account<'info, Track>,
-
-    #[account(
-        init,
-        payer = user,
-        space = TrackLike::MAX_SIZE,
-        seeds = [b"track_like", user.key().as_ref(), track.key().as_ref()],
-        bump
-    )]
-    pub track_like: Account<'info, TrackLike>,
-
-    #[account(
-        mut,
-        seeds = [b"user_stats", user.key().as_ref()],
-        bump
-    )]
-    pub user_stats: Account<'info, UserStats>,
-
-    #[account(
-        mut,
-        seeds = [b"user_stats", track.created_by.as_ref()],
-        bump
-    )]
-    pub creator_stats: Account<'info, UserStats>,
-
-    #[account(
-        init_if_needed,
-        payer = user,
-        space = 8 + ActivityFeed::MAX_SIZE,
-        seeds = [b"activity_feed", user.key().as_ref()],
-        bump
-    )]
-    pub activity_feed: Account<'info, ActivityFeed>,
-
-    #[account(mut)]
-    pub user: Signer<'info>,
-
-    pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct FollowUser<'info> {
-    #[account(
-        mut,
-        seeds = [b"user_profile", follower.key().as_ref()],
-        bump
-    )]
-    pub follower_profile: Account<'info, UserProfile>,
-
-    #[account(
-        mut,
-        seeds = [b"user_profile", following_profile.authority.as_ref()],
-        bump
-    )]
-    pub following_profile: Account<'info, UserProfile>,
-
-    #[account(
-        init,
-        payer = follower,
-        space = UserFollow::MAX_SIZE,
-        seeds = [b"user_follow", follower.key().as_ref(), following_profile.key().as_ref()],
-        bump
-    )]
-    pub user_follow: Account<'info, UserFollow>,
-
-    #[account(
-        init_if_needed,
-        payer = follower,
-        space = 8 + ActivityFeed::MAX_SIZE,
-        seeds = [b"activity_feed", follower.key().as_ref()],
-        bump
-    )]
-    pub activity_feed: Account<'info, ActivityFeed>,
-
-    #[account(mut)]
-    pub follower: Signer<'info>,
-
-    pub system_program: Program<'info, System>,
 }

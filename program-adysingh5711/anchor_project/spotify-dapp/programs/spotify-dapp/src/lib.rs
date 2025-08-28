@@ -1,49 +1,61 @@
-#![allow(deprecated)]
 use anchor_lang::prelude::*;
 
-// Import all modules
+// Import modules
 pub mod state;
-pub mod instructions;
 pub mod errors;
 
-// Re-export state structs only (avoid module name conflicts)
-pub use state::{
-    UserProfile, UserStats, Playlist, PlaylistTrack, Track, TrackPlay,
-    TrackLike, PlaylistLike, UserFollow, ActivityFeed, PlaylistCollaborator
-};
-
-// Re-export all errors
+// Re-export types
+pub use state::*;
 pub use errors::*;
 
 declare_id!("4f2BpoBwUu2tqvxDQmMnEB6q7VT3zV6rAnpTuruU2dSp");
 
 #[program]
-pub mod spotify_dapp {
+pub mod spotify_program {
     use super::*;
 
     // User Management Instructions
     pub fn create_user_profile(
-        ctx: Context<instructions::user::CreateUserProfile>,
+        ctx: Context<CreateUserProfile>,
         username: String,
         display_name: String,
         bio: String,
         profile_image: String,
     ) -> Result<()> {
-        instructions::user::create_user_profile(ctx, username, display_name, bio, profile_image)
+        let user_profile = &mut ctx.accounts.user_profile;
+        let user_stats = &mut ctx.accounts.user_stats;
+        let clock = Clock::get()?;
+
+        // Validate inputs
+        require!(username.len() <= 32, SpotifyError::UsernameTooLong);
+        require!(username.len() > 0, SpotifyError::UsernameEmpty);
+        require!(display_name.len() <= 64, SpotifyError::DisplayNameTooLong);
+        require!(bio.len() <= 256, SpotifyError::BioTooLong);
+        require!(profile_image.len() <= 256, SpotifyError::ProfileImageUrlTooLong);
+
+        user_profile.authority = ctx.accounts.authority.key();
+        user_profile.username = username;
+        user_profile.display_name = display_name;
+        user_profile.bio = bio;
+        user_profile.profile_image = profile_image;
+        user_profile.followers_count = 0;
+        user_profile.following_count = 0;
+        user_profile.created_at = clock.unix_timestamp;
+
+        // Initialize user stats
+        user_stats.user = user_profile.key();
+        user_stats.tracks_created = 0;
+        user_stats.playlists_created = 0;
+        user_stats.total_likes_received = 0;
+        user_stats.total_plays = 0;
+        user_stats.last_active = clock.unix_timestamp;
+
+        msg!("User profile created for: {}", user_profile.username);
+        Ok(())
     }
 
-    pub fn update_user_profile(
-        ctx: Context<instructions::user::UpdateUserProfile>,
-        display_name: Option<String>,
-        bio: Option<String>,
-        profile_image: Option<String>,
-    ) -> Result<()> {
-        instructions::user::update_user_profile(ctx, display_name, bio, profile_image)
-    }
-
-    // Track Management Instructions
     pub fn create_track(
-        ctx: Context<instructions::track::CreateTrack>,
+        ctx: Context<CreateTrack>,
         title: String,
         artist: String,
         album: String,
@@ -52,77 +64,90 @@ pub mod spotify_dapp {
         audio_url: String,
         cover_image: String,
     ) -> Result<()> {
-        instructions::track::create_track(ctx, title, artist, album, genre, duration, audio_url, cover_image)
-    }
+        let track = &mut ctx.accounts.track;
+        let user_stats = &mut ctx.accounts.user_stats;
+        let clock = Clock::get()?;
 
-    pub fn play_track(
-        ctx: Context<instructions::track::PlayTrack>,
-        duration_played: u64,
-    ) -> Result<()> {
-        instructions::track::play_track(ctx, duration_played)
-    }
+        require!(title.len() <= 128, SpotifyError::TrackTitleTooLong);
+        require!(title.len() > 0, SpotifyError::TrackTitleEmpty);
+        require!(artist.len() <= 64, SpotifyError::ArtistNameTooLong);
+        require!(album.len() <= 64, SpotifyError::AlbumNameTooLong);
+        require!(genre.len() <= 32, SpotifyError::GenreTooLong);
+        require!(audio_url.len() <= 256, SpotifyError::AudioUrlTooLong);
+        require!(cover_image.len() <= 256, SpotifyError::CoverImageUrlTooLong);
+        require!(duration > 0, SpotifyError::InvalidDuration);
 
-    // Playlist Management Instructions
-    pub fn create_playlist(
-        ctx: Context<instructions::playlist::CreatePlaylist>,
-        name: String,
-        description: String,
-        is_public: bool,
-        is_collaborative: bool,
-    ) -> Result<()> {
-        instructions::playlist::create_playlist(ctx, name, description, is_public, is_collaborative)
-    }
+        track.title = title;
+        track.artist = artist;
+        track.album = album;
+        track.genre = genre;
+        track.duration = duration;
+        track.audio_url = audio_url;
+        track.cover_image = cover_image;
+        track.likes_count = 0;
+        track.plays_count = 0;
+        track.created_by = ctx.accounts.authority.key();
+        track.created_at = clock.unix_timestamp;
 
-    pub fn add_track_to_playlist(
-        ctx: Context<instructions::playlist::AddTrackToPlaylist>,
-    ) -> Result<()> {
-        instructions::playlist::add_track_to_playlist(ctx)
-    }
+        // Update user stats
+        user_stats.tracks_created = user_stats.tracks_created.checked_add(1)
+            .ok_or(SpotifyError::ArithmeticOverflow)?;
+        user_stats.last_active = clock.unix_timestamp;
 
-    pub fn add_collaborator(
-        ctx: Context<instructions::playlist::AddCollaborator>,
-        permissions: u8,
-    ) -> Result<()> {
-        instructions::playlist::add_collaborator(ctx, permissions)
+        msg!("Track created: {} by {}", track.title, track.artist);
+        Ok(())
     }
+}
 
-    // Social Instructions
-    pub fn like_track(
-        ctx: Context<instructions::social::LikeTrack>,
-    ) -> Result<()> {
-        instructions::social::like_track(ctx)
-    }
+// Account Structures
+#[derive(Accounts)]
+#[instruction(username: String)]
+pub struct CreateUserProfile<'info> {
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + UserProfile::MAX_SIZE,
+        seeds = [b"user_profile", authority.key().as_ref()],
+        bump
+    )]
+    pub user_profile: Box<Account<'info, UserProfile>>,
 
-    pub fn follow_user(
-        ctx: Context<instructions::social::FollowUser>,
-    ) -> Result<()> {
-        instructions::social::follow_user(ctx)
-    }
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + UserStats::MAX_SIZE,
+        seeds = [b"user_stats", authority.key().as_ref()],
+        bump
+    )]
+    pub user_stats: Account<'info, UserStats>,
 
-    // Search and Discovery Instructions
-    pub fn create_search_index(
-        ctx: Context<instructions::search::CreateSearchIndex>,
-        search_term: String,
-        target_type: u8,
-        target_pubkey: Pubkey,
-    ) -> Result<()> {
-        instructions::search::create_search_index(ctx, search_term, target_type, target_pubkey)
-    }
+    #[account(mut)]
+    pub authority: Signer<'info>,
 
-    // Analytics Instructions
-    pub fn generate_user_insights(
-        ctx: Context<instructions::analytics::GenerateUserInsights>,
-    ) -> Result<()> {
-        instructions::analytics::generate_user_insights(ctx)
-    }
+    pub system_program: Program<'info, System>,
+}
 
-    pub fn create_recommendation(
-        ctx: Context<instructions::analytics::CreateRecommendation>,
-        recommendation_type: u8,
-        target: Pubkey,
-        score: f32,
-        reason: String,
-    ) -> Result<()> {
-        instructions::analytics::create_recommendation(ctx, recommendation_type, target, score, reason)
-    }
+#[derive(Accounts)]
+#[instruction(title: String, artist: String)]
+pub struct CreateTrack<'info> {
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + Track::MAX_SIZE,
+        seeds = [b"track", authority.key().as_ref(), title.as_bytes(), artist.as_bytes()],
+        bump
+    )]
+    pub track: Account<'info, Track>,
+
+    #[account(
+        mut,
+        seeds = [b"user_stats", authority.key().as_ref()],
+        bump
+    )]
+    pub user_stats: Account<'info, UserStats>,
+
+    #[account(mut)]
+    pub authority: Signer<'info>,
+
+    pub system_program: Program<'info, System>,
 }

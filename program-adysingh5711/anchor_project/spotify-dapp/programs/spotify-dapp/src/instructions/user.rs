@@ -2,6 +2,53 @@ use anchor_lang::prelude::*;
 use crate::state::*;
 use crate::errors::SpotifyError;
 
+#[derive(Accounts)]
+#[instruction(username: String)]
+pub struct CreateUserProfile<'info> {
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + UserProfile::MAX_SIZE,
+        seeds = [b"user_profile", authority.key().as_ref()],
+        bump
+    )]
+    pub user_profile: Box<Account<'info, UserProfile>>,
+
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + UserStats::MAX_SIZE,
+        seeds = [b"user_stats", authority.key().as_ref()],
+        bump
+    )]
+    pub user_stats: Account<'info, UserStats>,
+
+    #[account(mut)]
+    pub authority: Signer<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct UpdateUserProfile<'info> {
+    #[account(
+        mut,
+        seeds = [b"user_profile", authority.key().as_ref()],
+        bump,
+        constraint = user_profile.authority == authority.key() @ SpotifyError::Unauthorized
+    )]
+    pub user_profile: Box<Account<'info, UserProfile>>,
+
+    #[account(
+        mut,
+        seeds = [b"user_stats", authority.key().as_ref()],
+        bump
+    )]
+    pub user_stats: Account<'info, UserStats>,
+
+    pub authority: Signer<'info>,
+}
+
 pub fn create_user_profile(
     ctx: Context<CreateUserProfile>,
     username: String,
@@ -71,51 +118,4 @@ pub fn update_user_profile(
 
     msg!("User profile updated for: {}", user_profile.username);
     Ok(())
-}
-
-#[derive(Accounts)]
-#[instruction(username: String)]
-pub struct CreateUserProfile<'info> {
-    #[account(
-        init,
-        payer = authority,
-        space = UserProfile::MAX_SIZE,
-        seeds = [b"user_profile", authority.key().as_ref()],
-        bump
-    )]
-    pub user_profile: Box<Account<'info, UserProfile>>,
-
-    #[account(
-        init,
-        payer = authority,
-        space = UserStats::MAX_SIZE,
-        seeds = [b"user_stats", authority.key().as_ref()],
-        bump
-    )]
-    pub user_stats: Account<'info, UserStats>,
-
-    #[account(mut)]
-    pub authority: Signer<'info>,
-
-    pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct UpdateUserProfile<'info> {
-    #[account(
-        mut,
-        seeds = [b"user_profile", authority.key().as_ref()],
-        bump,
-        has_one = authority
-    )]
-    pub user_profile: Box<Account<'info, UserProfile>>,
-
-    #[account(
-        mut,
-        seeds = [b"user_stats", authority.key().as_ref()],
-        bump
-    )]
-    pub user_stats: Account<'info, UserStats>,
-
-    pub authority: Signer<'info>,
 }
