@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
-@import '@wallet-ui/tailwind/index.css';
-@import '@solana/wallet-adapter-react-ui/styles.css';
+/* @import '@wallet-ui/tailwind/index.css'; */
+/* @import '@solana/wallet-adapter-react-ui/styles.css'; */
 
 @custom-variant dark (&:is(.dark *));
 
@@ -129,6 +129,66 @@
 
 .wallet-adapter-button-trigger {
   height: auto !important;
-  @apply !border !bg-background !shadow-xs hover: !bg-accent !text-accent-foreground hover: !text-accent-foreground dark: !bg-input/30 !border-input/10 dark: !border-input dark:hover: !bg-input/50;
-  @apply !px-2 !py-[6px] !rounded-md !text-sm !font-semibold !shadow-sm !transition-all;
+  @apply px-2 py-1.5 rounded-md text-sm font-semibold shadow-sm transition-all border bg-background hover:bg-accent text-accent-foreground hover:text-accent-foreground;
+}
+
+/* Essential wallet adapter styles */
+.wallet-adapter-button {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  font-weight: 600;
+  height: 48px;
+  line-height: 48px;
+  padding: 0 24px;
+  border-radius: 12px;
+}
+
+.wallet-adapter-button:not([disabled]):hover {
+  background-color: #1a1a1a;
+}
+
+.wallet-adapter-button[disabled] {
+  background: #404040;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.wallet-adapter-button-end-icon,
+.wallet-adapter-button-start-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.wallet-adapter-button-end-icon {
+  margin-left: 12px;
+}
+
+.wallet-adapter-button-start-icon {
+  margin-right: 12px;
+}
+
+.wallet-adapter-modal-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 1040;
+}
+
+.wallet-adapter-modal {
+  background: #2c2d30;
+  border-radius: 10px;
+  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.6);
+  max-width: 400px;
+  position: relative;
+  width: calc(100% - 32px);
 }

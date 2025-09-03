@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Badge } from "@/components/ui/badge"
+import { usePlayer } from "./audio-player"
 
 const trackFormSchema = z.object({
     title: z.string()
@@ -295,11 +296,26 @@ export function TrackCard({
     isLoading = false,
     showArtist = true
 }: TrackCardProps) {
+    const { playTrack, currentTrack, isPlaying: globalIsPlaying } = usePlayer()
+
     const formatDuration = (seconds: number) => {
         const mins = Math.floor(seconds / 60)
         const secs = seconds % 60
         return `${mins}:${secs.toString().padStart(2, '0')}`
     }
+
+    const handlePlay = () => {
+        if (onPlay) {
+            onPlay() // Use custom handler if provided
+        } else {
+            // Use global player
+            playTrack(track)
+        }
+    }
+
+    const isCurrentlyPlaying = currentTrack?.title === track.title &&
+        currentTrack?.artist === track.artist &&
+        globalIsPlaying
 
     return (
         <Card className="w-full">
@@ -348,11 +364,11 @@ export function TrackCard({
                         <div className="flex flex-col gap-1">
                             <Button
                                 size="sm"
-                                variant={isPlaying ? "secondary" : "outline"}
-                                onClick={onPlay}
+                                variant={isCurrentlyPlaying ? "secondary" : "outline"}
+                                onClick={handlePlay}
                                 disabled={isLoading}
                             >
-                                {isPlaying ? "⏸️" : "▶️"}
+                                {isCurrentlyPlaying ? "⏸️" : "▶️"}
                             </Button>
 
                             <Button
