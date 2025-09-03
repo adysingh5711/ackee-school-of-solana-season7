@@ -1,11 +1,7 @@
 'use client'
 
-import { SpotifyDashboard } from '@/components/spotify/spotify-dashboard'
+import { SpotifyDashboardWalletUi } from '@/components/spotify/spotify-dashboard-wallet-ui'
 
 export default function Home() {
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <SpotifyDashboard />
-    </div>
-  )
+  return <SpotifyDashboardWalletUi />
 }

@@ -4,8 +4,6 @@ import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { useSpotifyProgram } from "@/hooks/use-spotify-program"
-import { PublicKey } from "@solana/web3.js"
 
 interface Track {
     title: string
@@ -19,26 +17,22 @@ interface Track {
     playsCount: number
     createdBy: string
     createdAt: number
-    publicKey?: string
 }
 
-interface AudioPlayerProps {
+interface SimpleAudioPlayerProps {
     track: Track | null
     onTrackEnd?: () => void
     onPlayStart?: () => void
     onError?: (error: string) => void
 }
 
-export function AudioPlayer({ track, onTrackEnd, onPlayStart, onError }: AudioPlayerProps) {
+export function SimpleAudioPlayer({ track, onTrackEnd, onPlayStart, onError }: SimpleAudioPlayerProps) {
     const [isPlaying, setIsPlaying] = React.useState(false)
     const [currentTime, setCurrentTime] = React.useState(0)
     const [duration, setDuration] = React.useState(0)
     const [volume, setVolume] = React.useState(1)
-    const [isLoading, setIsLoading] = React.useState(false)
-    const [playStartTime, setPlayStartTime] = React.useState<number | null>(null)
 
     const audioRef = React.useRef<HTMLAudioElement>(null)
-    const { playTrack } = useSpotifyProgram()
 
     // Format time for display
     const formatTime = (seconds: number) => {
@@ -55,42 +49,15 @@ export function AudioPlayer({ track, onTrackEnd, onPlayStart, onError }: AudioPl
             if (isPlaying) {
                 audioRef.current.pause()
                 setIsPlaying(false)
-
-                // Record play duration on blockchain when pausing
-                if (playStartTime && playTrack) {
-                    const durationPlayed = Math.floor((Date.now() - playStartTime) / 1000)
-                    if (durationPlayed > 0) {
-                        await recordPlayOnChain(durationPlayed)
-                    }
-                }
-                setPlayStartTime(null)
             } else {
                 await audioRef.current.play()
                 setIsPlaying(true)
-                setPlayStartTime(Date.now())
                 onPlayStart?.()
             }
         } catch (error) {
             console.error('Audio playback error:', error)
             onError?.(`Failed to play audio: ${error}`)
             setIsPlaying(false)
-        }
-    }
-
-    // Record play on blockchain
-    const recordPlayOnChain = async (durationPlayed: number) => {
-        if (!track?.publicKey || !track?.createdBy || !playTrack) return
-
-        try {
-            setIsLoading(true)
-            // Convert string values to PublicKey objects
-            const trackPubkey = new PublicKey(track.publicKey)
-            const creatorPubkey = new PublicKey(track.createdBy)
-            await playTrack(trackPubkey, creatorPubkey, durationPlayed)
-        } catch (error) {
-            console.error('Failed to record play on blockchain:', error)
-        } finally {
-            setIsLoading(false)
         }
     }
 
@@ -109,17 +76,9 @@ export function AudioPlayer({ track, onTrackEnd, onPlayStart, onError }: AudioPl
     }
 
     // Handle track ended
-    const handleEnded = async () => {
+    const handleEnded = () => {
         setIsPlaying(false)
         setCurrentTime(0)
-
-        // Record full play duration on blockchain
-        if (playStartTime && playTrack && track) {
-            const durationPlayed = Math.floor((Date.now() - playStartTime) / 1000)
-            await recordPlayOnChain(durationPlayed)
-        }
-        setPlayStartTime(null)
-
         onTrackEnd?.()
     }
 
@@ -149,7 +108,6 @@ export function AudioPlayer({ track, onTrackEnd, onPlayStart, onError }: AudioPl
             audioRef.current.pause()
             setIsPlaying(false)
             setCurrentTime(0)
-            setPlayStartTime(null)
         }
     }, [track?.audioUrl])
 
@@ -157,7 +115,9 @@ export function AudioPlayer({ track, onTrackEnd, onPlayStart, onError }: AudioPl
         return (
             <Card className="w-full">
                 <CardContent className="p-4 text-center text-muted-foreground">
-                    No track selected
+                    <div className="flex items-center justify-center h-20">
+                        <span>🎵 No track selected</span>
+                    </div>
                 </CardContent>
             </Card>
         )
@@ -186,7 +146,7 @@ export function AudioPlayer({ track, onTrackEnd, onPlayStart, onError }: AudioPl
                                 className="w-full h-full object-cover"
                             />
                         ) : (
-                            <div className="text-muted-foreground text-xs">♪</div>
+                            <div className="text-muted-foreground text-2xl">♪</div>
                         )}
                     </div>
 
@@ -212,16 +172,9 @@ export function AudioPlayer({ track, onTrackEnd, onPlayStart, onError }: AudioPl
                             size="lg"
                             variant={isPlaying ? "secondary" : "default"}
                             onClick={handlePlayPause}
-                            disabled={isLoading}
                             className="w-12 h-12 rounded-full"
                         >
-                            {isLoading ? (
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                            ) : isPlaying ? (
-                                "⏸️"
-                            ) : (
-                                "▶️"
-                            )}
+                            {isPlaying ? "⏸️" : "▶️"}
                         </Button>
 
                         {/* Volume Control */}
@@ -260,7 +213,6 @@ export function AudioPlayer({ track, onTrackEnd, onPlayStart, onError }: AudioPl
                 {/* Track Stats */}
                 <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
                     <span>{track.playsCount} plays • {track.likesCount} likes</span>
-                    {isLoading && <span>Recording play...</span>}
                 </div>
             </CardContent>
         </Card>
@@ -273,17 +225,13 @@ interface PlayerContextType {
     isPlaying: boolean
     playTrack: (track: Track) => void
     pauseTrack: () => void
-    queue: Track[]
-    addToQueue: (track: Track) => void
-    clearQueue: () => void
 }
 
 const PlayerContext = React.createContext<PlayerContextType | null>(null)
 
-export function PlayerProvider({ children }: { children: React.ReactNode }) {
+export function SimplePlayerProvider({ children }: { children: React.ReactNode }) {
     const [currentTrack, setCurrentTrack] = React.useState<Track | null>(null)
     const [isPlaying, setIsPlaying] = React.useState(false)
-    const [queue, setQueue] = React.useState<Track[]>([])
 
     const playTrack = (track: Track) => {
         setCurrentTrack(track)
@@ -294,24 +242,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         setIsPlaying(false)
     }
 
-    const addToQueue = (track: Track) => {
-        setQueue(prev => [...prev, track])
-    }
-
-    const clearQueue = () => {
-        setQueue([])
-    }
-
     const handleTrackEnd = () => {
-        // Play next track in queue
-        if (queue.length > 0) {
-            const nextTrack = queue[0]
-            setQueue(prev => prev.slice(1))
-            playTrack(nextTrack)
-        } else {
-            setIsPlaying(false)
-            setCurrentTrack(null)
-        }
+        setIsPlaying(false)
     }
 
     return (
@@ -319,16 +251,13 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
             currentTrack,
             isPlaying,
             playTrack,
-            pauseTrack,
-            queue,
-            addToQueue,
-            clearQueue
+            pauseTrack
         }}>
             {children}
-            {/* Global Player - Always visible at bottom */}
+            {/* Global Player - Always visible at bottom when playing */}
             {currentTrack && (
-                <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t">
-                    <AudioPlayer
+                <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t p-2">
+                    <SimpleAudioPlayer
                         track={currentTrack}
                         onTrackEnd={handleTrackEnd}
                     />
@@ -338,10 +267,10 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     )
 }
 
-export const usePlayer = () => {
+export const useSimplePlayer = () => {
     const context = React.useContext(PlayerContext)
     if (!context) {
-        throw new Error('usePlayer must be used within PlayerProvider')
+        throw new Error('useSimplePlayer must be used within SimplePlayerProvider')
     }
     return context
 }
