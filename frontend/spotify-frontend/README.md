@@ -47,7 +47,7 @@ src/
 ## Smart Contract Integration
 
 The frontend integrates with a Solana program deployed at:
-`2ufGdkX3kG72BbcWXPo1jUqAxiYTPmbe6yBQV6LTgbse`
+`cMq3jX2jiQJTCMJPAAj6BT48WqCiJhT2yQE9BzSRr2X`
 
 ### Supported Instructions
 - **create_user_profile**: Create user profile and stats accounts

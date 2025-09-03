@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Badge } from "@/components/ui/badge"
-import { usePlayer } from "./audio-player"
+import { useSimplePlayer } from "./simple-audio-player"
 
 const trackFormSchema = z.object({
     title: z.string()
@@ -296,7 +296,7 @@ export function TrackCard({
     isLoading = false,
     showArtist = true
 }: TrackCardProps) {
-    const { playTrack, currentTrack, isPlaying: globalIsPlaying } = usePlayer()
+    const { playTrack, currentTrack, isPlaying: globalIsPlaying } = useSimplePlayer()
 
     const formatDuration = (seconds: number) => {
         const mins = Math.floor(seconds / 60)

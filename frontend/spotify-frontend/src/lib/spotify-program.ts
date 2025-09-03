@@ -8,7 +8,7 @@ import {
 import { WalletContextState } from '@solana/wallet-adapter-react'
 
 // Program ID from Anchor.toml
-export const SPOTIFY_PROGRAM_ID = new PublicKey('2ufGdkX3kG72BbcWXPo1jUqAxiYTPmbe6yBQV6LTgbse')
+export const SPOTIFY_PROGRAM_ID = new PublicKey('cMq3jX2jiQJTCMJPAAj6BT48WqCiJhT2yQE9BzSRr2X')
 
 // Type definitions
 interface UserProfile {
