@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -140,10 +141,13 @@ export function SimpleAudioPlayer({ track, onTrackEnd, onPlayStart, onError }: S
                     {/* Album Cover */}
                     <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center overflow-hidden flex-shrink-0">
                         {track.coverImage ? (
-                            <img
+                            <Image
                                 src={track.coverImage}
                                 alt={`${track.title} cover`}
+                                width={64}
+                                height={64}
                                 className="w-full h-full object-cover"
+                                unoptimized
                             />
                         ) : (
                             <div className="text-muted-foreground text-2xl">♪</div>
@@ -188,6 +192,8 @@ export function SimpleAudioPlayer({ track, onTrackEnd, onPlayStart, onError }: S
                                 value={volume}
                                 onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
                                 className="w-16 h-1"
+                                aria-label="Volume control"
+                                title="Adjust volume"
                             />
                         </div>
                     </div>

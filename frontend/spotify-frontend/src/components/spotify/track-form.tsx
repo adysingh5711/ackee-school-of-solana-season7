@@ -268,7 +268,7 @@ interface Track {
     genre: string
     duration: number
     audioUrl: string
-    coverImage?: string
+    coverImage: string
     likesCount: number
     playsCount: number
     createdBy: string
@@ -292,7 +292,6 @@ export function TrackCard({
     onLike,
     onUnlike,
     isLiked = false,
-    isPlaying = false,
     isLoading = false,
     showArtist = true
 }: TrackCardProps) {

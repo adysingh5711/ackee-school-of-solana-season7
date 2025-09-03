@@ -53,14 +53,16 @@ export interface Playlist {
 }
 
 // Compatibility wrapper to adapt wallet-ui to wallet-adapter interface
-function createWalletAdapterCompatibility(walletUi: any) {
+function createWalletAdapterCompatibility(walletUi: { account?: { address: string } | null }) {
     return {
         publicKey: walletUi.account?.address ? new PublicKey(walletUi.account.address) : null,
-        signTransaction: async (transaction: any) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        signTransaction: async (_transaction: unknown) => {
             // This would need to be implemented with wallet-ui's signing method
             throw new Error('Transaction signing not yet implemented for wallet-ui')
         },
-        signAllTransactions: async (transactions: any[]) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        signAllTransactions: async (_transactions: unknown[]) => {
             throw new Error('Transaction signing not yet implemented for wallet-ui')
         },
         connected: !!walletUi.account,
@@ -79,7 +81,7 @@ export function useSpotifyProgramWalletUi() {
         if (!walletCompat.publicKey) return null
         // For now, we'll return a mock program since transaction signing needs to be implemented
         return null // new SpotifyProgram(walletUi.client, walletCompat)
-    }, [walletUi.client, walletCompat])
+    }, [walletCompat])
 
     return {
         program: spotifyProgram,
@@ -88,16 +90,18 @@ export function useSpotifyProgramWalletUi() {
         account: walletUi.account,
 
         // Mock methods for now - these would need proper implementation
-        createUserProfile: async (username: string, displayName: string, bio: string, profileImage: string) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        createUserProfile: async (_username: string, _displayName: string, _bio: string, _profileImage: string) => {
             throw new Error('Not yet implemented - need to integrate with wallet-ui transaction signing')
         },
-        updateUserProfile: async (displayName?: string, bio?: string, profileImage?: string) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        updateUserProfile: async (_displayName?: string, _bio?: string, _profileImage?: string) => {
             throw new Error('Not yet implemented - need to integrate with wallet-ui transaction signing')
         },
-        getUserProfile: async (userPubkey: PublicKey): Promise<UserProfile | null> => {
+        getUserProfile: async (_userPubkey: PublicKey): Promise<UserProfile | null> => {
             // Mock data for now
             return {
-                authority: userPubkey,
+                authority: _userPubkey,
                 username: 'demo_user',
                 displayName: 'Demo User',
                 bio: 'This is a demo profile',
@@ -107,9 +111,9 @@ export function useSpotifyProgramWalletUi() {
                 createdAt: Date.now() / 1000,
             }
         },
-        getUserStats: async (userPubkey: PublicKey): Promise<UserStats | null> => {
+        getUserStats: async (_userPubkey: PublicKey): Promise<UserStats | null> => {
             return {
-                user: userPubkey,
+                user: _userPubkey,
                 tracksCreated: 0,
                 playlistsCreated: 0,
                 totalLikesReceived: 0,
@@ -117,19 +121,24 @@ export function useSpotifyProgramWalletUi() {
                 lastActive: Date.now() / 1000,
             }
         },
-        getUserTracks: async (userPubkey: PublicKey): Promise<Track[]> => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        getUserTracks: async (_userPubkey: PublicKey): Promise<Track[]> => {
             return []
         },
-        getUserPlaylists: async (userPubkey: PublicKey): Promise<Playlist[]> => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        getUserPlaylists: async (_userPubkey: PublicKey): Promise<Playlist[]> => {
             return []
         },
-        createTrack: async (title: string, artist: string, album: string, genre: string, duration: number, audioUrl: string, coverImage: string) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        createTrack: async (_title: string, _artist: string, _album: string, _genre: string, _duration: number, _audioUrl: string, _coverImage: string) => {
             throw new Error('Not yet implemented - need to integrate with wallet-ui transaction signing')
         },
-        playTrack: async (trackPubkey: PublicKey, creatorPubkey: PublicKey, durationPlayed: number) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        playTrack: async (_trackPubkey: PublicKey, _creatorPubkey: PublicKey, _durationPlayed: number) => {
             throw new Error('Not yet implemented - need to integrate with wallet-ui transaction signing')
         },
-        createPlaylist: async (name: string, description: string, isPublic: boolean, isCollaborative: boolean) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        createPlaylist: async (_name: string, _description: string, _isPublic: boolean, _isCollaborative: boolean) => {
             throw new Error('Not yet implemented - need to integrate with wallet-ui transaction signing')
         },
 
