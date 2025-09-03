@@ -1,15 +1,21 @@
 # Project Description
 
-**Deployed Frontend URL:** https://spotify-dapp-sss7.vercel.app
+<strong>Deployed Frontend URL:</strong> <a href="https://spotify-dapp-sss7.vercel.app" target="_blank">https://spotify-dapp-sss7.vercel.app</a>
 
 ## Solana Program Deployment
 
 **Program ID:** cMq3jX2jiQJTCMJPAAj6BT48WqCiJhT2yQE9BzSRr2X
+
 **Owner:** BPFLoaderUpgradeab1e11111111111111111111111
+
 **ProgramData Address:** 3Z2TBxBSdDgETqzb9Dm8SRptQjs4fuuLqemTbHYUBpak
+
 **Authority:** CxSYGtm4ohnfBs2RhPTeJHfRtqcF4h9iatsdvXiH5hz2
+
 **Last Deployed In Slot:** 405469136
+
 **Data Length:** 264728 (0x40a18) bytes
+
 **Balance:** 1.84371096 SOL
 
 ## Project Overview
