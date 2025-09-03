@@ -81,7 +81,9 @@ export function SpotifyDashboard() {
     const [userPlaylists, setUserPlaylists] = React.useState<Playlist[]>([])
     const [isLoading, setIsLoading] = React.useState(false)
     const [activeTab, setActiveTab] = React.useState("overview")
+    const [isClient, setIsClient] = React.useState(false)
 
+    // All hooks must be called before any early returns
     const loadUserData = React.useCallback(async () => {
         if (!publicKey) return
 
@@ -105,12 +107,25 @@ export function SpotifyDashboard() {
         }
     }, [publicKey, getUserProfile, getUserStats, getUserTracks, getUserPlaylists])
 
+    // Ensure component only renders on client side
+    React.useEffect(() => {
+        setIsClient(true)
+    }, [])
+
     // Load user data when wallet connects
     React.useEffect(() => {
         if (programConnected && publicKey) {
             loadUserData()
         }
     }, [programConnected, publicKey, loadUserData])
+
+    if (!isClient) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+        )
+    }
 
     interface UserProfileData {
         username: string

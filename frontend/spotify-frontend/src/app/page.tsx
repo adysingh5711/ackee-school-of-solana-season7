@@ -1,3 +1,5 @@
+'use client'
+
 import { SpotifyDashboard } from '@/components/spotify/spotify-dashboard'
 
 export default function Home() {
