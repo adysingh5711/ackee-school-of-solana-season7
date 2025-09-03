@@ -1,16 +1,63 @@
-import { 
-  Connection, 
-  PublicKey, 
-  SystemProgram, 
+import {
+  Connection,
+  PublicKey,
+  SystemProgram,
   Transaction,
-  TransactionInstruction,
-  SYSVAR_RENT_PUBKEY
+  TransactionInstruction
 } from '@solana/web3.js'
-import { AnchorProvider, BN, Program, web3 } from '@project-serum/anchor'
 import { WalletContextState } from '@solana/wallet-adapter-react'
 
 // Program ID from Anchor.toml
 export const SPOTIFY_PROGRAM_ID = new PublicKey('2ufGdkX3kG72BbcWXPo1jUqAxiYTPmbe6yBQV6LTgbse')
+
+// Type definitions
+interface UserProfile {
+  authority: string
+  username: string
+  displayName: string
+  bio: string
+  profileImage: string
+  followersCount: number
+  followingCount: number
+  createdAt: number
+}
+
+interface UserStats {
+  user: string
+  tracksCreated: number
+  playlistsCreated: number
+  totalLikesReceived: number
+  totalPlays: number
+  lastActive: number
+}
+
+interface Track {
+  authority: string
+  title: string
+  artist: string
+  album: string
+  genre: string
+  duration: number
+  audioUrl: string
+  coverImage: string
+  likesCount: number
+  playsCount: number
+  createdAt: number
+  createdBy: string
+}
+
+interface Playlist {
+  authority: string
+  name: string
+  description: string
+  isPublic: boolean
+  isCollaborative: boolean
+  tracksCount: number
+  likesCount: number
+  playsCount: number
+  createdAt: number
+  updatedAt: number
+}
 
 // Instruction discriminators (first 8 bytes of instruction data)
 const INSTRUCTION_DISCRIMINATORS = {
@@ -27,7 +74,7 @@ export class SpotifyProgram {
     private connection: Connection,
     private wallet: WalletContextState,
     private programId: PublicKey = SPOTIFY_PROGRAM_ID
-  ) {}
+  ) { }
 
   // Helper to derive PDAs
   public static getPDA(seeds: (string | Buffer | Uint8Array | PublicKey)[], programId: PublicKey = SPOTIFY_PROGRAM_ID) {
@@ -36,7 +83,7 @@ export class SpotifyProgram {
       if (seed instanceof PublicKey) return seed.toBuffer()
       return Buffer.from(seed)
     })
-    
+
     return PublicKey.findProgramAddressSync(seedBuffers, programId)
   }
 
@@ -258,23 +305,23 @@ export class SpotifyProgram {
 
     const signedTransaction = await this.wallet.signTransaction(transaction)
     const signature = await this.connection.sendRawTransaction(signedTransaction.serialize())
-    
+
     await this.connection.confirmTransaction(signature, 'confirmed')
     return signature
   }
 
   // Fetch user profile
-  async fetchUserProfile(userPubkey: PublicKey): Promise<any | null> {
+  async fetchUserProfile(userPubkey: PublicKey): Promise<UserProfile | null> {
     try {
       const [userProfilePDA] = SpotifyProgram.getPDA(['user_profile', userPubkey])
       const accountInfo = await this.connection.getAccountInfo(userProfilePDA)
-      
+
       if (!accountInfo) return null
-      
+
       // Deserialize account data (you'd implement proper deserialization here)
       // For now, returning mock data structure
       return {
-        authority: userPubkey,
+        authority: userPubkey.toBase58(),
         username: 'mock_user',
         displayName: 'Mock User',
         bio: 'Mock bio',
@@ -290,16 +337,16 @@ export class SpotifyProgram {
   }
 
   // Fetch user stats
-  async fetchUserStats(userPubkey: PublicKey): Promise<any | null> {
+  async fetchUserStats(userPubkey: PublicKey): Promise<UserStats | null> {
     try {
       const [userStatsPDA] = SpotifyProgram.getPDA(['user_stats', userPubkey])
       const accountInfo = await this.connection.getAccountInfo(userStatsPDA)
-      
+
       if (!accountInfo) return null
-      
+
       // Deserialize account data
       return {
-        user: userPubkey,
+        user: userPubkey.toBase58(),
         tracksCreated: 0,
         playlistsCreated: 0,
         totalLikesReceived: 0,
@@ -313,11 +360,11 @@ export class SpotifyProgram {
   }
 
   // Fetch all tracks by user
-  async fetchUserTracks(userPubkey: PublicKey): Promise<any[]> {
+  async fetchUserTracks(userPubkey: PublicKey): Promise<Track[]> {
     try {
       // In a real implementation, you'd query all track accounts created by this user
       // This would involve using getProgramAccounts with proper filters
-      const accounts = await this.connection.getProgramAccounts(this.programId, {
+      await this.connection.getProgramAccounts(this.programId, {
         filters: [
           {
             memcmp: {
@@ -337,10 +384,10 @@ export class SpotifyProgram {
   }
 
   // Fetch all playlists by user
-  async fetchUserPlaylists(userPubkey: PublicKey): Promise<any[]> {
+  async fetchUserPlaylists(userPubkey: PublicKey): Promise<Playlist[]> {
     try {
       // Similar to fetchUserTracks, but for playlists
-      const accounts = await this.connection.getProgramAccounts(this.programId, {
+      await this.connection.getProgramAccounts(this.programId, {
         filters: [
           {
             memcmp: {

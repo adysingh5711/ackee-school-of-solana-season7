@@ -13,11 +13,56 @@ import { PlaylistForm, PlaylistCard } from "./playlist-form"
 import { SocialTabs } from "./social-components"
 import { useSpotifyProgram } from "@/hooks/use-spotify-program"
 
-interface SpotifyDashboardProps {
-    className?: string
+// Import types from spotify-program
+type UserProfile = {
+    authority: string
+    username: string
+    displayName: string
+    bio: string
+    profileImage: string
+    followersCount: number
+    followingCount: number
+    createdAt: number
 }
 
-export function SpotifyDashboard({ className }: SpotifyDashboardProps) {
+type UserStats = {
+    user: string
+    tracksCreated: number
+    playlistsCreated: number
+    totalLikesReceived: number
+    totalPlays: number
+    lastActive: number
+}
+
+type Track = {
+    authority: string
+    title: string
+    artist: string
+    album: string
+    genre: string
+    duration: number
+    audioUrl: string
+    coverImage: string
+    likesCount: number
+    playsCount: number
+    createdAt: number
+    createdBy: string
+}
+
+type Playlist = {
+    authority: string
+    name: string
+    description: string
+    isPublic: boolean
+    isCollaborative: boolean
+    tracksCount: number
+    likesCount: number
+    playsCount: number
+    createdAt: number
+    updatedAt: number
+}
+
+export function SpotifyDashboard() {
     const { connected, publicKey } = useWallet()
     const {
         connected: programConnected,
@@ -30,47 +75,54 @@ export function SpotifyDashboard({ className }: SpotifyDashboardProps) {
         createPlaylist
     } = useSpotifyProgram()
 
-    const [userProfile, setUserProfile] = React.useState(null)
-    const [userStats, setUserStats] = React.useState(null)
-    const [userTracks, setUserTracks] = React.useState([])
-    const [userPlaylists, setUserPlaylists] = React.useState([])
+    const [userProfile, setUserProfile] = React.useState<UserProfile | null>(null)
+    const [userStats, setUserStats] = React.useState<UserStats | null>(null)
+    const [userTracks, setUserTracks] = React.useState<Track[]>([])
+    const [userPlaylists, setUserPlaylists] = React.useState<Playlist[]>([])
     const [isLoading, setIsLoading] = React.useState(false)
     const [activeTab, setActiveTab] = React.useState("overview")
+
+    const loadUserData = React.useCallback(async () => {
+        if (!publicKey) return
+
+        setIsLoading(true)
+        try {
+            const [profile, stats, tracks, playlists] = await Promise.all([
+                getUserProfile?.(publicKey),
+                getUserStats?.(publicKey),
+                getUserTracks?.(publicKey),
+                getUserPlaylists?.(publicKey)
+            ])
+
+            setUserProfile(profile || null)
+            setUserStats(stats || null)
+            setUserTracks(tracks || [])
+            setUserPlaylists(playlists || [])
+        } catch (error) {
+            console.error('Error loading user data:', error)
+        } finally {
+            setIsLoading(false)
+        }
+    }, [publicKey, getUserProfile, getUserStats, getUserTracks, getUserPlaylists])
 
     // Load user data when wallet connects
     React.useEffect(() => {
         if (programConnected && publicKey) {
             loadUserData()
         }
-    }, [programConnected, publicKey])
+    }, [programConnected, publicKey, loadUserData])
 
-    const loadUserData = async () => {
-        if (!publicKey) return
-
-        setIsLoading(true)
-        try {
-            const [profile, stats, tracks, playlists] = await Promise.all([
-                getUserProfile(publicKey),
-                getUserStats(publicKey),
-                getUserTracks(publicKey),
-                getUserPlaylists(publicKey)
-            ])
-
-            setUserProfile(profile)
-            setUserStats(stats)
-            setUserTracks(tracks)
-            setUserPlaylists(playlists)
-        } catch (error) {
-            console.error('Error loading user data:', error)
-        } finally {
-            setIsLoading(false)
-        }
+    interface UserProfileData {
+        username: string
+        displayName: string
+        bio: string
+        profileImage?: string
     }
 
-    const handleCreateProfile = async (data: any) => {
+    const handleCreateProfile = async (data: UserProfileData) => {
         setIsLoading(true)
         try {
-            await createUserProfile(data.username, data.displayName, data.bio, data.profileImage)
+            await createUserProfile?.(data.username, data.displayName, data.bio, data.profileImage || '')
             await loadUserData()
         } catch (error) {
             console.error('Error creating profile:', error)
@@ -80,17 +132,27 @@ export function SpotifyDashboard({ className }: SpotifyDashboardProps) {
         }
     }
 
-    const handleCreateTrack = async (data: any) => {
+    interface TrackData {
+        title: string
+        artist: string
+        album: string
+        genre: string
+        duration: number
+        audioUrl: string
+        coverImage?: string
+    }
+
+    const handleCreateTrack = async (data: TrackData) => {
         setIsLoading(true)
         try {
-            await createTrack(
+            await createTrack?.(
                 data.title,
                 data.artist,
                 data.album,
                 data.genre,
                 data.duration,
                 data.audioUrl,
-                data.coverImage
+                data.coverImage || ''
             )
             await loadUserData()
         } catch (error) {
@@ -101,10 +163,17 @@ export function SpotifyDashboard({ className }: SpotifyDashboardProps) {
         }
     }
 
-    const handleCreatePlaylist = async (data: any) => {
+    interface PlaylistData {
+        name: string
+        description: string
+        isPublic: boolean
+        isCollaborative: boolean
+    }
+
+    const handleCreatePlaylist = async (data: PlaylistData) => {
         setIsLoading(true)
         try {
-            await createPlaylist(data.name, data.description, data.isPublic, data.isCollaborative)
+            await createPlaylist?.(data.name, data.description, data.isPublic, data.isCollaborative)
             await loadUserData()
         } catch (error) {
             console.error('Error creating playlist:', error)
@@ -164,14 +233,14 @@ export function SpotifyDashboard({ className }: SpotifyDashboardProps) {
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="tracks">Tracks</TabsTrigger>
-          <TabsTrigger value="playlists">Playlists</TabsTrigger>
-          <TabsTrigger value="social">Social</TabsTrigger>
-          <TabsTrigger value="discover">Discover</TabsTrigger>
-        </TabsList>
+                <TabsList className="grid w-full grid-cols-6">
+                    <TabsTrigger value="overview">Overview</TabsTrigger>
+                    <TabsTrigger value="profile">Profile</TabsTrigger>
+                    <TabsTrigger value="tracks">Tracks</TabsTrigger>
+                    <TabsTrigger value="playlists">Playlists</TabsTrigger>
+                    <TabsTrigger value="social">Social</TabsTrigger>
+                    <TabsTrigger value="discover">Discover</TabsTrigger>
+                </TabsList>
 
                 <TabsContent value="overview" className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -281,7 +350,7 @@ export function SpotifyDashboard({ className }: SpotifyDashboardProps) {
                     {userProfile && (
                         <UserProfileDisplay
                             profile={userProfile}
-                            stats={userStats}
+                            stats={userStats || undefined}
                             isOwnProfile={true}
                         />
                     )}
@@ -302,7 +371,7 @@ export function SpotifyDashboard({ className }: SpotifyDashboardProps) {
                         {userTracks.length === 0 ? (
                             <Card>
                                 <CardContent className="p-8 text-center">
-                                    <p className="text-muted-foreground mb-4">You haven't uploaded any tracks yet</p>
+                                    <p className="text-muted-foreground mb-4">You haven&apos;t uploaded any tracks yet</p>
                                     <TrackForm onSubmit={handleCreateTrack} isLoading={isLoading} />
                                 </CardContent>
                             </Card>
@@ -333,7 +402,7 @@ export function SpotifyDashboard({ className }: SpotifyDashboardProps) {
                         {userPlaylists.length === 0 ? (
                             <Card>
                                 <CardContent className="p-8 text-center">
-                                    <p className="text-muted-foreground mb-4">You haven't created any playlists yet</p>
+                                    <p className="text-muted-foreground mb-4">You haven&apos;t created any playlists yet</p>
                                     <PlaylistForm onSubmit={handleCreatePlaylist} isLoading={isLoading} />
                                 </CardContent>
                             </Card>
@@ -349,33 +418,32 @@ export function SpotifyDashboard({ className }: SpotifyDashboardProps) {
                     </div>
                 </TabsContent>
 
-                        <TabsContent value="social" className="space-y-6">
-          <SocialTabs
-            currentUser={userProfile}
-            followers={[]} // You'd fetch these from the blockchain
-            following={[]} // You'd fetch these from the blockchain
-            activities={[]} // You'd fetch these from the blockchain
-            onUserClick={(user) => console.log('User clicked:', user)}
-            onFollowToggle={(user) => console.log('Follow toggle:', user)}
-            isLoading={isLoading}
-          />
-        </TabsContent>
+                <TabsContent value="social" className="space-y-6">
+                    <SocialTabs
+                        followers={[]} // You'd fetch these from the blockchain
+                        following={[]} // You'd fetch these from the blockchain
+                        activities={[]} // You'd fetch these from the blockchain
+                        onUserClick={(user) => console.log('User clicked:', user)}
+                        onFollowToggle={(user) => console.log('Follow toggle:', user)}
+                        isLoading={isLoading}
+                    />
+                </TabsContent>
 
-        <TabsContent value="discover" className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-bold">Discover Music</h2>
-            <p className="text-muted-foreground">Explore tracks and playlists from the community</p>
-          </div>
-          
-          <Card>
-            <CardContent className="p-8 text-center">
-              <p className="text-muted-foreground">Discovery features coming soon!</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Browse tracks, follow artists, and discover new music from the community.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                <TabsContent value="discover" className="space-y-6">
+                    <div>
+                        <h2 className="text-2xl font-bold">Discover Music</h2>
+                        <p className="text-muted-foreground">Explore tracks and playlists from the community</p>
+                    </div>
+
+                    <Card>
+                        <CardContent className="p-8 text-center">
+                            <p className="text-muted-foreground">Discovery features coming soon!</p>
+                            <p className="text-sm text-muted-foreground mt-2">
+                                Browse tracks, follow artists, and discover new music from the community.
+                            </p>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
             </Tabs>
         </div>
     )

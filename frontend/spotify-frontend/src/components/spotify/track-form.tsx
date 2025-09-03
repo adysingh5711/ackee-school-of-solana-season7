@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -75,9 +76,11 @@ export function TrackForm({
                 <div className="flex items-center gap-4">
                     <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center overflow-hidden">
                         {watchedValues.coverImage ? (
-                            <img
+                            <Image
                                 src={watchedValues.coverImage}
                                 alt="Cover"
+                                width={64}
+                                height={64}
                                 className="w-full h-full object-cover"
                             />
                         ) : (
@@ -231,7 +234,7 @@ export function TrackForm({
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        URL to your track's cover art. Leave empty for default.
+                                        URL to your track&apos;s cover art. Leave empty for default.
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -304,9 +307,11 @@ export function TrackCard({
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center overflow-hidden flex-shrink-0">
                         {track.coverImage ? (
-                            <img
+                            <Image
                                 src={track.coverImage}
                                 alt={`${track.title} cover`}
+                                width={48}
+                                height={48}
                                 className="w-full h-full object-cover"
                             />
                         ) : (

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -18,8 +19,8 @@ const playlistFormSchema = z.object({
         .max(64, "Playlist name must be 64 characters or less"),
     description: z.string()
         .max(256, "Description must be 256 characters or less"),
-    isPublic: z.boolean().default(true),
-    isCollaborative: z.boolean().default(false),
+    isPublic: z.boolean(),
+    isCollaborative: z.boolean(),
 })
 
 type PlaylistFormData = z.infer<typeof playlistFormSchema>
@@ -303,7 +304,6 @@ interface PlaylistViewProps {
     onRemoveTrack?: (trackIndex: number) => void
     onAddTrack?: () => void
     onLikeTrack?: (trackIndex: number) => void
-    onUnlikeTrack?: (trackIndex: number) => void
     isOwner?: boolean
     canEdit?: boolean
     isLoading?: boolean
@@ -317,7 +317,6 @@ export function PlaylistView({
     onRemoveTrack,
     onAddTrack,
     onLikeTrack,
-    onUnlikeTrack,
     isOwner = false,
     canEdit = false,
     isLoading = false,
@@ -378,7 +377,7 @@ export function PlaylistView({
                         </CardContent>
                     </Card>
                 ) : (
-                    tracks.map(({ track, addedBy, addedAt, position }, index) => (
+                    tracks.map(({ track, addedAt, position }, index) => (
                         <Card key={position} className={currentTrackIndex === index ? "ring-2 ring-primary" : ""}>
                             <CardContent className="p-4">
                                 <div className="flex items-center gap-4">
@@ -388,9 +387,11 @@ export function PlaylistView({
 
                                     <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center overflow-hidden flex-shrink-0">
                                         {track.coverImage ? (
-                                            <img
+                                            <Image
                                                 src={track.coverImage}
                                                 alt={`${track.title} cover`}
+                                                width={48}
+                                                height={48}
                                                 className="w-full h-full object-cover"
                                             />
                                         ) : (
