@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -92,7 +92,7 @@ export function SocialFeed({ activities, isLoading = false, onLoadMore }: Social
                       {activity.user.displayName.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{getActivityIcon(activity.type)}</span>
@@ -128,15 +128,14 @@ export function SocialFeed({ activities, isLoading = false, onLoadMore }: Social
 
 interface UserSearchProps {
   onUserSelect?: (user: User) => void
-  isLoading?: boolean
 }
 
-export function UserSearch({ onUserSelect, isLoading = false }: UserSearchProps) {
+export function UserSearch({ onUserSelect }: UserSearchProps) {
   const [searchQuery, setSearchQuery] = React.useState('')
   const [searchResults, setSearchResults] = React.useState<User[]>([])
   const [isSearching, setIsSearching] = React.useState(false)
 
-  const handleSearch = async () => {
+  const handleSearch = React.useCallback(async () => {
     if (!searchQuery.trim()) return
 
     setIsSearching(true)
@@ -162,8 +161,8 @@ export function UserSearch({ onUserSelect, isLoading = false }: UserSearchProps)
           isFollowing: true
         }
       ]
-      
-      setSearchResults(mockResults.filter(user => 
+
+      setSearchResults(mockResults.filter(user =>
         user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.displayName.toLowerCase().includes(searchQuery.toLowerCase())
       ))
@@ -172,7 +171,7 @@ export function UserSearch({ onUserSelect, isLoading = false }: UserSearchProps)
     } finally {
       setIsSearching(false)
     }
-  }
+  }, [searchQuery])
 
   React.useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -184,7 +183,7 @@ export function UserSearch({ onUserSelect, isLoading = false }: UserSearchProps)
     }, 300)
 
     return () => clearTimeout(timeoutId)
-  }, [searchQuery])
+  }, [searchQuery, handleSearch])
 
   return (
     <div className="space-y-4">
@@ -203,8 +202,8 @@ export function UserSearch({ onUserSelect, isLoading = false }: UserSearchProps)
       {searchResults.length > 0 && (
         <div className="space-y-2">
           {searchResults.map((user) => (
-            <Card key={user.publicKey} className="cursor-pointer hover:bg-accent/50" 
-                  onClick={() => onUserSelect?.(user)}>
+            <Card key={user.publicKey} className="cursor-pointer hover:bg-accent/50"
+              onClick={() => onUserSelect?.(user)}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -214,7 +213,7 @@ export function UserSearch({ onUserSelect, isLoading = false }: UserSearchProps)
                         {user.displayName.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    
+
                     <div>
                       <h3 className="font-semibold">{user.displayName}</h3>
                       <p className="text-sm text-muted-foreground">@{user.username}</p>
@@ -229,7 +228,7 @@ export function UserSearch({ onUserSelect, isLoading = false }: UserSearchProps)
                     {user.isFollowing ? "Following" : "Follow"}
                   </Badge>
                 </div>
-                
+
                 {user.bio && (
                   <p className="text-sm text-muted-foreground mt-3 line-clamp-2">
                     {user.bio}
@@ -244,7 +243,7 @@ export function UserSearch({ onUserSelect, isLoading = false }: UserSearchProps)
       {searchQuery && searchResults.length === 0 && !isSearching && (
         <Card>
           <CardContent className="p-8 text-center">
-            <p className="text-muted-foreground">No users found for "{searchQuery}"</p>
+            <p className="text-muted-foreground">No users found for &ldquo;{searchQuery}&rdquo;</p>
           </CardContent>
         </Card>
       )}
@@ -260,12 +259,12 @@ interface FollowersListProps {
   isLoading?: boolean
 }
 
-export function FollowersList({ 
-  users, 
-  type, 
-  onUserClick, 
-  onFollowToggle, 
-  isLoading = false 
+export function FollowersList({
+  users,
+  type,
+  onUserClick,
+  onFollowToggle,
+  isLoading = false
 }: FollowersListProps) {
   return (
     <div className="space-y-4">
@@ -290,7 +289,7 @@ export function FollowersList({
             <Card key={user.publicKey}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
-                  <div 
+                  <div
                     className="flex items-center gap-3 cursor-pointer flex-1"
                     onClick={() => onUserClick?.(user)}
                   >
@@ -300,7 +299,7 @@ export function FollowersList({
                         {user.displayName.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    
+
                     <div className="flex-1 min-w-0">
                       <h4 className="font-semibold truncate">{user.displayName}</h4>
                       <p className="text-sm text-muted-foreground truncate">@{user.username}</p>
@@ -333,7 +332,6 @@ export function FollowersList({
 }
 
 interface SocialTabsProps {
-  currentUser: User
   followers: User[]
   following: User[]
   activities: ActivityItem[]
@@ -343,7 +341,6 @@ interface SocialTabsProps {
 }
 
 export function SocialTabs({
-  currentUser,
   followers,
   following,
   activities,
@@ -365,7 +362,7 @@ export function SocialTabs({
       </TabsContent>
 
       <TabsContent value="discover" className="mt-6">
-        <UserSearch onUserSelect={onUserClick} isLoading={isLoading} />
+        <UserSearch onUserSelect={onUserClick} />
       </TabsContent>
 
       <TabsContent value="followers" className="mt-6">
