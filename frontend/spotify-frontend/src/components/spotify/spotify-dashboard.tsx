@@ -11,6 +11,7 @@ import { UserProfileForm, UserProfileDisplay } from "./user-profile-form"
 import { TrackForm, TrackCard } from "./track-form"
 import { PlaylistForm, PlaylistCard } from "./playlist-form"
 import { SocialTabs } from "./social-components"
+import { PlayerProvider } from "./audio-player"
 import { useSpotifyProgram } from "@/hooks/use-spotify-program"
 
 // Import types from spotify-program
@@ -233,233 +234,235 @@ export function SpotifyDashboard() {
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold">Spotify dApp</h1>
-                    <p className="text-muted-foreground">
-                        Decentralized music platform on Solana
-                    </p>
-                </div>
-                <Badge variant="outline" className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    Connected
-                </Badge>
-            </div>
-
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-6">
-                    <TabsTrigger value="overview">Overview</TabsTrigger>
-                    <TabsTrigger value="profile">Profile</TabsTrigger>
-                    <TabsTrigger value="tracks">Tracks</TabsTrigger>
-                    <TabsTrigger value="playlists">Playlists</TabsTrigger>
-                    <TabsTrigger value="social">Social</TabsTrigger>
-                    <TabsTrigger value="discover">Discover</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="overview" className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Tracks</CardTitle>
-                                <span className="text-2xl">🎵</span>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{userStats?.tracksCreated || 0}</div>
-                                <p className="text-xs text-muted-foreground">tracks created</p>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Playlists</CardTitle>
-                                <span className="text-2xl">📝</span>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{userStats?.playlistsCreated || 0}</div>
-                                <p className="text-xs text-muted-foreground">playlists created</p>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Likes</CardTitle>
-                                <span className="text-2xl">❤️</span>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{userStats?.totalLikesReceived || 0}</div>
-                                <p className="text-xs text-muted-foreground">likes received</p>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Plays</CardTitle>
-                                <span className="text-2xl">▶️</span>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{userStats?.totalPlays || 0}</div>
-                                <p className="text-xs text-muted-foreground">total plays</p>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Recent Tracks</CardTitle>
-                                <CardDescription>Your latest uploads</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                {userTracks.length === 0 ? (
-                                    <div className="text-center py-8">
-                                        <p className="text-muted-foreground">No tracks yet</p>
-                                        <Button className="mt-4" onClick={() => setActiveTab("tracks")}>
-                                            Upload Your First Track
-                                        </Button>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4">
-                                        {userTracks.slice(0, 3).map((track, index) => (
-                                            <TrackCard
-                                                key={index}
-                                                track={track}
-                                                showArtist={false}
-                                            />
-                                        ))}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Recent Playlists</CardTitle>
-                                <CardDescription>Your latest playlists</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                {userPlaylists.length === 0 ? (
-                                    <div className="text-center py-8">
-                                        <p className="text-muted-foreground">No playlists yet</p>
-                                        <Button className="mt-4" onClick={() => setActiveTab("playlists")}>
-                                            Create Your First Playlist
-                                        </Button>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4">
-                                        {userPlaylists.slice(0, 3).map((playlist, index) => (
-                                            <PlaylistCard
-                                                key={index}
-                                                playlist={playlist}
-                                                isOwner={true}
-                                            />
-                                        ))}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </div>
-                </TabsContent>
-
-                <TabsContent value="profile" className="space-y-6">
-                    {userProfile && (
-                        <UserProfileDisplay
-                            profile={userProfile}
-                            stats={userStats || undefined}
-                            isOwnProfile={true}
-                        />
-                    )}
-                </TabsContent>
-
-                <TabsContent value="tracks" className="space-y-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h2 className="text-2xl font-bold">Your Tracks</h2>
-                            <p className="text-muted-foreground">Manage your uploaded tracks</p>
-                        </div>
-                        <Button onClick={() => setActiveTab("upload-track")}>
-                            Upload Track
-                        </Button>
-                    </div>
-
-                    <div className="space-y-4">
-                        {userTracks.length === 0 ? (
-                            <Card>
-                                <CardContent className="p-8 text-center">
-                                    <p className="text-muted-foreground mb-4">You haven&apos;t uploaded any tracks yet</p>
-                                    <TrackForm onSubmit={handleCreateTrack} isLoading={isLoading} />
-                                </CardContent>
-                            </Card>
-                        ) : (
-                            userTracks.map((track, index) => (
-                                <TrackCard
-                                    key={index}
-                                    track={track}
-                                    showArtist={false}
-                                />
-                            ))
-                        )}
-                    </div>
-                </TabsContent>
-
-                <TabsContent value="playlists" className="space-y-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h2 className="text-2xl font-bold">Your Playlists</h2>
-                            <p className="text-muted-foreground">Manage your playlists</p>
-                        </div>
-                        <Button onClick={() => setActiveTab("create-playlist")}>
-                            Create Playlist
-                        </Button>
-                    </div>
-
-                    <div className="space-y-4">
-                        {userPlaylists.length === 0 ? (
-                            <Card>
-                                <CardContent className="p-8 text-center">
-                                    <p className="text-muted-foreground mb-4">You haven&apos;t created any playlists yet</p>
-                                    <PlaylistForm onSubmit={handleCreatePlaylist} isLoading={isLoading} />
-                                </CardContent>
-                            </Card>
-                        ) : (
-                            userPlaylists.map((playlist, index) => (
-                                <PlaylistCard
-                                    key={index}
-                                    playlist={playlist}
-                                    isOwner={true}
-                                />
-                            ))
-                        )}
-                    </div>
-                </TabsContent>
-
-                <TabsContent value="social" className="space-y-6">
-                    <SocialTabs
-                        followers={[]} // You'd fetch these from the blockchain
-                        following={[]} // You'd fetch these from the blockchain
-                        activities={[]} // You'd fetch these from the blockchain
-                        onUserClick={(user) => console.log('User clicked:', user)}
-                        onFollowToggle={(user) => console.log('Follow toggle:', user)}
-                        isLoading={isLoading}
-                    />
-                </TabsContent>
-
-                <TabsContent value="discover" className="space-y-6">
+        <PlayerProvider>
+            <div className="space-y-6">
+                <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-2xl font-bold">Discover Music</h2>
-                        <p className="text-muted-foreground">Explore tracks and playlists from the community</p>
+                        <h1 className="text-3xl font-bold">Spotify dApp</h1>
+                        <p className="text-muted-foreground">
+                            Decentralized music platform on Solana
+                        </p>
                     </div>
+                    <Badge variant="outline" className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        Connected
+                    </Badge>
+                </div>
 
-                    <Card>
-                        <CardContent className="p-8 text-center">
-                            <p className="text-muted-foreground">Discovery features coming soon!</p>
-                            <p className="text-sm text-muted-foreground mt-2">
-                                Browse tracks, follow artists, and discover new music from the community.
-                            </p>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
-        </div>
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-6">
+                        <TabsTrigger value="overview">Overview</TabsTrigger>
+                        <TabsTrigger value="profile">Profile</TabsTrigger>
+                        <TabsTrigger value="tracks">Tracks</TabsTrigger>
+                        <TabsTrigger value="playlists">Playlists</TabsTrigger>
+                        <TabsTrigger value="social">Social</TabsTrigger>
+                        <TabsTrigger value="discover">Discover</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="overview" className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Tracks</CardTitle>
+                                    <span className="text-2xl">🎵</span>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{userStats?.tracksCreated || 0}</div>
+                                    <p className="text-xs text-muted-foreground">tracks created</p>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Playlists</CardTitle>
+                                    <span className="text-2xl">📝</span>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{userStats?.playlistsCreated || 0}</div>
+                                    <p className="text-xs text-muted-foreground">playlists created</p>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Likes</CardTitle>
+                                    <span className="text-2xl">❤️</span>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{userStats?.totalLikesReceived || 0}</div>
+                                    <p className="text-xs text-muted-foreground">likes received</p>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Plays</CardTitle>
+                                    <span className="text-2xl">▶️</span>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{userStats?.totalPlays || 0}</div>
+                                    <p className="text-xs text-muted-foreground">total plays</p>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Recent Tracks</CardTitle>
+                                    <CardDescription>Your latest uploads</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {userTracks.length === 0 ? (
+                                        <div className="text-center py-8">
+                                            <p className="text-muted-foreground">No tracks yet</p>
+                                            <Button className="mt-4" onClick={() => setActiveTab("tracks")}>
+                                                Upload Your First Track
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            {userTracks.slice(0, 3).map((track, index) => (
+                                                <TrackCard
+                                                    key={index}
+                                                    track={track}
+                                                    showArtist={false}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Recent Playlists</CardTitle>
+                                    <CardDescription>Your latest playlists</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {userPlaylists.length === 0 ? (
+                                        <div className="text-center py-8">
+                                            <p className="text-muted-foreground">No playlists yet</p>
+                                            <Button className="mt-4" onClick={() => setActiveTab("playlists")}>
+                                                Create Your First Playlist
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            {userPlaylists.slice(0, 3).map((playlist, index) => (
+                                                <PlaylistCard
+                                                    key={index}
+                                                    playlist={playlist}
+                                                    isOwner={true}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="profile" className="space-y-6">
+                        {userProfile && (
+                            <UserProfileDisplay
+                                profile={userProfile}
+                                stats={userStats || undefined}
+                                isOwnProfile={true}
+                            />
+                        )}
+                    </TabsContent>
+
+                    <TabsContent value="tracks" className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h2 className="text-2xl font-bold">Your Tracks</h2>
+                                <p className="text-muted-foreground">Manage your uploaded tracks</p>
+                            </div>
+                            <Button onClick={() => setActiveTab("upload-track")}>
+                                Upload Track
+                            </Button>
+                        </div>
+
+                        <div className="space-y-4">
+                            {userTracks.length === 0 ? (
+                                <Card>
+                                    <CardContent className="p-8 text-center">
+                                        <p className="text-muted-foreground mb-4">You haven&apos;t uploaded any tracks yet</p>
+                                        <TrackForm onSubmit={handleCreateTrack} isLoading={isLoading} />
+                                    </CardContent>
+                                </Card>
+                            ) : (
+                                userTracks.map((track, index) => (
+                                    <TrackCard
+                                        key={index}
+                                        track={track}
+                                        showArtist={false}
+                                    />
+                                ))
+                            )}
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="playlists" className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h2 className="text-2xl font-bold">Your Playlists</h2>
+                                <p className="text-muted-foreground">Manage your playlists</p>
+                            </div>
+                            <Button onClick={() => setActiveTab("create-playlist")}>
+                                Create Playlist
+                            </Button>
+                        </div>
+
+                        <div className="space-y-4">
+                            {userPlaylists.length === 0 ? (
+                                <Card>
+                                    <CardContent className="p-8 text-center">
+                                        <p className="text-muted-foreground mb-4">You haven&apos;t created any playlists yet</p>
+                                        <PlaylistForm onSubmit={handleCreatePlaylist} isLoading={isLoading} />
+                                    </CardContent>
+                                </Card>
+                            ) : (
+                                userPlaylists.map((playlist, index) => (
+                                    <PlaylistCard
+                                        key={index}
+                                        playlist={playlist}
+                                        isOwner={true}
+                                    />
+                                ))
+                            )}
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="social" className="space-y-6">
+                        <SocialTabs
+                            followers={[]} // You'd fetch these from the blockchain
+                            following={[]} // You'd fetch these from the blockchain
+                            activities={[]} // You'd fetch these from the blockchain
+                            onUserClick={(user) => console.log('User clicked:', user)}
+                            onFollowToggle={(user) => console.log('Follow toggle:', user)}
+                            isLoading={isLoading}
+                        />
+                    </TabsContent>
+
+                    <TabsContent value="discover" className="space-y-6">
+                        <div>
+                            <h2 className="text-2xl font-bold">Discover Music</h2>
+                            <p className="text-muted-foreground">Explore tracks and playlists from the community</p>
+                        </div>
+
+                        <Card>
+                            <CardContent className="p-8 text-center">
+                                <p className="text-muted-foreground">Discovery features coming soon!</p>
+                                <p className="text-sm text-muted-foreground mt-2">
+                                    Browse tracks, follow artists, and discover new music from the community.
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                </Tabs>
+            </div>
+        </PlayerProvider>
     )
 }
