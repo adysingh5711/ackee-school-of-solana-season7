@@ -1,5 +1,9 @@
-import { DashboardFeature } from '@/components/dashboard/dashboard-feature'
+import { SpotifyDashboard } from '@/components/spotify/spotify-dashboard'
 
 export default function Home() {
-  return <DashboardFeature />
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <SpotifyDashboard />
+    </div>
+  )
 }
