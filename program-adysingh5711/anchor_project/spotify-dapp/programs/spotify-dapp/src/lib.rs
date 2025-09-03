@@ -9,7 +9,7 @@ pub mod errors;
 pub use state::*;
 pub use errors::*;
 
-declare_id!("4f2BpoBwUu2tqvxDQmMnEB6q7VT3zV6rAnpTuruU2dSp");
+declare_id!("2ufGdkX3kG72BbcWXPo1jUqAxiYTPmbe6yBQV6LTgbse");
 
 #[program]
 pub mod spotify_program {

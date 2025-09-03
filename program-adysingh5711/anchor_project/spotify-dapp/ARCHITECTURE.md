@@ -5,7 +5,7 @@
 The Spotify dApp has been architected with a modular design for maximum maintainability, scalability, and developer experience.
 
 ```
-programs/spotify-dapp/src/
+programs/spotify_dapp/src/
 ├── lib.rs                    # Main program entry point
 ├── state/                    # Account structures and data models
 │   ├── mod.rs               # Module exports
