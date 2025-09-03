@@ -6,13 +6,16 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-spotify_program = "4f2BpoBwUu2tqvxDQmMnEB6q7VT3zV6rAnpTuruU2dSp"
+spotify_dapp = "4f2BpoBwUu2tqvxDQmMnEB6q7VT3zV6rAnpTuruU2dSp"
+
+[programs.devnet]
+spotify_dapp = "2ufGdkX3kG72BbcWXPo1jUqAxiYTPmbe6yBQV6LTgbse"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

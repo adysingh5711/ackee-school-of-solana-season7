@@ -4,7 +4,7 @@ import { SpotifyDapp } from "../target/types/spotify_dapp";
 import { PublicKey, Keypair } from "@solana/web3.js";
 import { expect } from "chai";
 
-describe("spotify-dapp", () => {
+describe("spotify_dapp", () => {
   // Configure the client to use the local cluster.
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
