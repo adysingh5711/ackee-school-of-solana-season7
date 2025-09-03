@@ -12,13 +12,34 @@ import { TrackForm, TrackCard } from "./track-form"
 import { PlaylistForm, PlaylistCard } from "./playlist-form"
 import { SocialTabs } from "./social-components"
 import { SimplePlayerProvider } from "./simple-audio-player"
-import { useSpotifyProgramWalletUi } from "@/hooks/use-spotify-program-wallet-ui"
+import { useSpotifyProgramWalletUi, UserProfile, UserStats, Track, Playlist } from "@/hooks/use-spotify-program-wallet-ui"
+
+// Type adapters to convert PublicKey-based types to string-based types for components
+const adaptTrackForComponent = (track: Track) => ({
+    ...track,
+    createdBy: track.createdBy.toString()
+})
+
+const adaptPlaylistForComponent = (playlist: Playlist) => ({
+    ...playlist,
+    authority: playlist.authority.toString()
+})
+
+const adaptUserStatsForComponent = (stats: UserStats | null) => {
+    if (!stats) return undefined
+    return {
+        tracksCreated: stats.tracksCreated,
+        playlistsCreated: stats.playlistsCreated,
+        totalLikesReceived: stats.totalLikesReceived,
+        totalPlays: stats.totalPlays
+    }
+}
 
 interface SpotifyDashboardProps {
     className?: string
 }
 
-export function SpotifyDashboardWalletUi({ className }: SpotifyDashboardProps) {
+export function SpotifyDashboardWalletUi({ }: SpotifyDashboardProps) {
     const { account } = useWalletUi()
     const {
         connected,
@@ -32,21 +53,14 @@ export function SpotifyDashboardWalletUi({ className }: SpotifyDashboardProps) {
         createPlaylist
     } = useSpotifyProgramWalletUi()
 
-    const [userProfile, setUserProfile] = React.useState(null)
-    const [userStats, setUserStats] = React.useState(null)
-    const [userTracks, setUserTracks] = React.useState([])
-    const [userPlaylists, setUserPlaylists] = React.useState([])
+    const [userProfile, setUserProfile] = React.useState<UserProfile | null>(null)
+    const [userStats, setUserStats] = React.useState<UserStats | null>(null)
+    const [userTracks, setUserTracks] = React.useState<Track[]>([])
+    const [userPlaylists, setUserPlaylists] = React.useState<Playlist[]>([])
     const [isLoading, setIsLoading] = React.useState(false)
     const [activeTab, setActiveTab] = React.useState("overview")
 
-    // Load user data when wallet connects
-    React.useEffect(() => {
-        if (connected && publicKey) {
-            loadUserData()
-        }
-    }, [connected, publicKey])
-
-    const loadUserData = async () => {
+    const loadUserData = React.useCallback(async () => {
         if (!publicKey) return
 
         setIsLoading(true)
@@ -67,28 +81,42 @@ export function SpotifyDashboardWalletUi({ className }: SpotifyDashboardProps) {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [publicKey, getUserProfile, getUserStats, getUserTracks, getUserPlaylists])
 
-    const handleCreateProfile = async (data: any) => {
+    // Load user data when wallet connects
+    React.useEffect(() => {
+        if (connected && publicKey) {
+            loadUserData()
+        }
+    }, [connected, publicKey, loadUserData])
+
+
+
+    const handleCreateProfile = async (data: {
+        username: string
+        displayName: string
+        bio: string
+        profileImage?: string
+    }) => {
         setIsLoading(true)
         try {
-            await createUserProfile(data.username, data.displayName, data.bio, data.profileImage)
+            await createUserProfile(data.username, data.displayName, data.bio, data.profileImage || '')
             await loadUserData()
         } catch (error) {
             console.error('Error creating profile:', error)
             // For demo purposes, create a mock profile
             setUserProfile({
-                authority: publicKey?.toString() || '',
+                authority: publicKey!,
                 username: data.username,
                 displayName: data.displayName,
                 bio: data.bio,
-                profileImage: data.profileImage,
+                profileImage: data.profileImage || '',
                 followersCount: 0,
                 followingCount: 0,
                 createdAt: Date.now() / 1000,
             })
             setUserStats({
-                user: publicKey?.toString() || '',
+                user: publicKey!,
                 tracksCreated: 0,
                 playlistsCreated: 0,
                 totalLikesReceived: 0,
@@ -100,7 +128,15 @@ export function SpotifyDashboardWalletUi({ className }: SpotifyDashboardProps) {
         }
     }
 
-    const handleCreateTrack = async (data: any) => {
+    const handleCreateTrack = async (data: {
+        title: string
+        artist: string
+        album: string
+        genre: string
+        duration: number
+        audioUrl: string
+        coverImage?: string
+    }) => {
         setIsLoading(true)
         try {
             await createTrack(
@@ -110,23 +146,23 @@ export function SpotifyDashboardWalletUi({ className }: SpotifyDashboardProps) {
                 data.genre,
                 data.duration,
                 data.audioUrl,
-                data.coverImage
+                data.coverImage || ''
             )
             await loadUserData()
         } catch (error) {
             console.error('Error creating track:', error)
             // For demo purposes, add to mock tracks
-            const newTrack = {
+            const newTrack: Track = {
                 title: data.title,
                 artist: data.artist,
                 album: data.album,
                 genre: data.genre,
                 duration: data.duration,
                 audioUrl: data.audioUrl,
-                coverImage: data.coverImage,
+                coverImage: data.coverImage || '',
                 likesCount: 0,
                 playsCount: 0,
-                createdBy: publicKey?.toString() || '',
+                createdBy: publicKey!,
                 createdAt: Date.now() / 1000,
             }
             setUserTracks(prev => [...prev, newTrack])
@@ -138,7 +174,12 @@ export function SpotifyDashboardWalletUi({ className }: SpotifyDashboardProps) {
         }
     }
 
-    const handleCreatePlaylist = async (data: any) => {
+    const handleCreatePlaylist = async (data: {
+        name: string
+        description: string
+        isPublic: boolean
+        isCollaborative: boolean
+    }) => {
         setIsLoading(true)
         try {
             await createPlaylist(data.name, data.description, data.isPublic, data.isCollaborative)
@@ -146,8 +187,8 @@ export function SpotifyDashboardWalletUi({ className }: SpotifyDashboardProps) {
         } catch (error) {
             console.error('Error creating playlist:', error)
             // For demo purposes, add to mock playlists
-            const newPlaylist = {
-                authority: publicKey?.toString() || '',
+            const newPlaylist: Playlist = {
+                authority: publicKey!,
                 name: data.name,
                 description: data.description,
                 isPublic: data.isPublic,
@@ -331,7 +372,7 @@ export function SpotifyDashboardWalletUi({ className }: SpotifyDashboardProps) {
                                             {userTracks.slice(0, 3).map((track, index) => (
                                                 <TrackCard
                                                     key={index}
-                                                    track={track}
+                                                    track={adaptTrackForComponent(track)}
                                                     showArtist={false}
                                                 />
                                             ))}
@@ -358,7 +399,7 @@ export function SpotifyDashboardWalletUi({ className }: SpotifyDashboardProps) {
                                             {userPlaylists.slice(0, 3).map((playlist, index) => (
                                                 <PlaylistCard
                                                     key={index}
-                                                    playlist={playlist}
+                                                    playlist={adaptPlaylistForComponent(playlist)}
                                                     isOwner={true}
                                                 />
                                             ))}
@@ -372,8 +413,16 @@ export function SpotifyDashboardWalletUi({ className }: SpotifyDashboardProps) {
                     <TabsContent value="profile" className="space-y-6">
                         {userProfile && (
                             <UserProfileDisplay
-                                profile={userProfile}
-                                stats={userStats}
+                                profile={{
+                                    username: userProfile.username,
+                                    displayName: userProfile.displayName,
+                                    bio: userProfile.bio,
+                                    profileImage: userProfile.profileImage,
+                                    followersCount: userProfile.followersCount,
+                                    followingCount: userProfile.followingCount,
+                                    createdAt: userProfile.createdAt
+                                }}
+                                stats={adaptUserStatsForComponent(userStats)}
                                 isOwnProfile={true}
                             />
                         )}
@@ -404,7 +453,7 @@ export function SpotifyDashboardWalletUi({ className }: SpotifyDashboardProps) {
                                             {userTracks.map((track, index) => (
                                                 <TrackCard
                                                     key={index}
-                                                    track={track}
+                                                    track={adaptTrackForComponent(track)}
                                                     showArtist={false}
                                                 />
                                             ))}
@@ -440,7 +489,7 @@ export function SpotifyDashboardWalletUi({ className }: SpotifyDashboardProps) {
                                             {userPlaylists.map((playlist, index) => (
                                                 <PlaylistCard
                                                     key={index}
-                                                    playlist={playlist}
+                                                    playlist={adaptPlaylistForComponent(playlist)}
                                                     isOwner={true}
                                                 />
                                             ))}
@@ -453,7 +502,6 @@ export function SpotifyDashboardWalletUi({ className }: SpotifyDashboardProps) {
 
                     <TabsContent value="social" className="space-y-6">
                         <SocialTabs
-                            currentUser={userProfile}
                             followers={[]}
                             following={[]}
                             activities={[]}
