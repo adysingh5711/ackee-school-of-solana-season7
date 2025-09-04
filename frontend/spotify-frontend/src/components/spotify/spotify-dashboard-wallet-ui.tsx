@@ -61,7 +61,7 @@ export function SpotifyDashboardWalletUi({ }: SpotifyDashboardProps) {
     const [activeTab, setActiveTab] = React.useState("overview")
 
     const loadUserData = React.useCallback(async () => {
-        if (!publicKey) return
+        if (!publicKey || !connected) return
 
         setIsLoading(true)
         try {
@@ -74,16 +74,16 @@ export function SpotifyDashboardWalletUi({ }: SpotifyDashboardProps) {
 
             setUserProfile(profile)
             setUserStats(stats)
-            setUserTracks(tracks)
-            setUserPlaylists(playlists)
+            setUserTracks(tracks || [])
+            setUserPlaylists(playlists || [])
         } catch (error) {
             console.error('Error loading user data:', error)
         } finally {
             setIsLoading(false)
         }
-    }, [publicKey, getUserProfile, getUserStats, getUserTracks, getUserPlaylists])
+    }, [publicKey, connected, getUserProfile, getUserStats, getUserTracks, getUserPlaylists])
 
-    // Load user data when wallet connects
+    // Load user data when wallet connects - with proper dependencies
     React.useEffect(() => {
         if (connected && publicKey) {
             loadUserData()
@@ -92,7 +92,7 @@ export function SpotifyDashboardWalletUi({ }: SpotifyDashboardProps) {
 
 
 
-    const handleCreateProfile = async (data: {
+    const handleCreateProfile = React.useCallback(async (data: {
         username: string
         displayName: string
         bio: string
@@ -126,9 +126,9 @@ export function SpotifyDashboardWalletUi({ }: SpotifyDashboardProps) {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [createUserProfile, loadUserData, publicKey])
 
-    const handleCreateTrack = async (data: {
+    const handleCreateTrack = React.useCallback(async (data: {
         title: string
         artist: string
         album: string
@@ -172,9 +172,9 @@ export function SpotifyDashboardWalletUi({ }: SpotifyDashboardProps) {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [createTrack, loadUserData, publicKey, userStats])
 
-    const handleCreatePlaylist = async (data: {
+    const handleCreatePlaylist = React.useCallback(async (data: {
         name: string
         description: string
         isPublic: boolean
@@ -206,7 +206,22 @@ export function SpotifyDashboardWalletUi({ }: SpotifyDashboardProps) {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [createPlaylist, loadUserData, publicKey, userStats])
+
+    // Memoized demo track to prevent recreation on every render
+    const demoTrack = React.useMemo(() => ({
+        title: "Demo Song",
+        artist: "Demo Artist",
+        album: "Demo Album",
+        genre: "Electronic",
+        duration: 180,
+        audioUrl: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
+        coverImage: "",
+        likesCount: 42,
+        playsCount: 128,
+        createdBy: "demo",
+        createdAt: Date.now() / 1000
+    }), [])
 
     if (!connected) {
         return (
@@ -352,19 +367,7 @@ export function SpotifyDashboardWalletUi({ }: SpotifyDashboardProps) {
                                                 <div className="p-4 border border-dashed rounded-lg">
                                                     <p className="text-sm text-muted-foreground mb-2">Try the demo track:</p>
                                                     <TrackCard
-                                                        track={{
-                                                            title: "Demo Song",
-                                                            artist: "Demo Artist",
-                                                            album: "Demo Album",
-                                                            genre: "Electronic",
-                                                            duration: 180,
-                                                            audioUrl: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
-                                                            coverImage: "",
-                                                            likesCount: 42,
-                                                            playsCount: 128,
-                                                            createdBy: "demo",
-                                                            createdAt: Date.now() / 1000
-                                                        }}
+                                                        track={demoTrack}
                                                         showArtist={false}
                                                     />
                                                 </div>
