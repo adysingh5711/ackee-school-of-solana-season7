@@ -193,7 +193,7 @@ interface PlaylistCardProps {
     isLoading?: boolean
 }
 
-export function PlaylistCard({
+export const PlaylistCard = React.memo(function PlaylistCard({
     playlist,
     onPlay,
     onLike,
@@ -279,7 +279,7 @@ export function PlaylistCard({
             </CardContent>
         </Card>
     )
-}
+})
 
 interface PlaylistTrack {
     track: {
