@@ -286,7 +286,7 @@ interface TrackCardProps {
     showArtist?: boolean
 }
 
-export function TrackCard({
+export const TrackCard = React.memo(function TrackCard({
     track,
     onPlay,
     onLike,
@@ -384,4 +384,4 @@ export function TrackCard({
             </CardContent>
         </Card>
     )
-}
+})

@@ -103,6 +103,30 @@ export function SimpleAudioPlayer({ track, onTrackEnd, onPlayStart, onError }: S
         }
     }
 
+    // Set up event listeners and cleanup
+    React.useEffect(() => {
+        const audio = audioRef.current
+        if (!audio) return
+
+        const handleTimeUpdate = () => setCurrentTime(audio.currentTime)
+        const handleLoadedMetadata = () => setDuration(audio.duration)
+        const handleEnded = () => {
+            setIsPlaying(false)
+            setCurrentTime(0)
+            onTrackEnd?.()
+        }
+
+        audio.addEventListener('timeupdate', handleTimeUpdate)
+        audio.addEventListener('loadedmetadata', handleLoadedMetadata)
+        audio.addEventListener('ended', handleEnded)
+
+        return () => {
+            audio.removeEventListener('timeupdate', handleTimeUpdate)
+            audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
+            audio.removeEventListener('ended', handleEnded)
+        }
+    }, [track?.audioUrl, onTrackEnd])
+
     // Reset player when track changes
     React.useEffect(() => {
         if (audioRef.current) {
